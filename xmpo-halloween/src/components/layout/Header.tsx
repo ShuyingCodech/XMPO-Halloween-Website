@@ -13,21 +13,20 @@ const Header: React.FC = () => {
   return (
     <header className="header">
       <div className="header-container">
-        <div className="logo-section">
-          <div className="logo" onClick={() => navigate("/")}>
-            XMPO
-          </div>
-          <div className="back-to-main" onClick={() => navigate("/")}>
-            back to main page
-          </div>
+        <div className="logo-section" onClick={() => navigate("/")}>
+          <img
+            src="./images/xmpo-logo.avif"
+            alt="XMPO Logo"
+            style={{ width: "253px", height: "101px", marginRight: "10px" }}
+          />
         </div>
 
         <div className="nav-buttons">
           <button className="nav-btn" onClick={scrollToFooter}>
-            About Us
+            About XMPO
           </button>
           <button className="nav-btn" onClick={scrollToFooter}>
-            Contact Us
+            Buy Tickets
           </button>
         </div>
       </div>

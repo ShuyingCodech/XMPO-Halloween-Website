@@ -1,6 +1,6 @@
 .home-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background: black;
   color: white;
   padding-top: 80px;
 }
@@ -24,89 +24,34 @@
   opacity: 0.9;
 }
 
-.ticket-info {
+.buy-tickets-btn {
   background: rgba(255, 255, 255, 0.1);
-  padding: 2rem;
-  border-radius: 12px;
-  margin: 2rem 0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
   backdrop-filter: blur(10px);
 }
 
-.ticket-info h2 {
-  color: #4CAF50;
-  margin-bottom: 1.5rem;
-}
-
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 2rem;
-}
-
-.detail-item {
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-}
-
-.pricing-info h3 {
-  color: #4CAF50;
-  margin-bottom: 1rem;
-}
-
-.price-list {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
-
-.price-item {
-  padding: 0.8rem 1.5rem;
-  background: rgba(76, 175, 80, 0.2);
-  border: 1px solid #4CAF50;
-  border-radius: 25px;
-  font-weight: bold;
-}
-
-.price-note {
-  font-size: 0.9rem;
-  opacity: 0.8;
-  margin-top: 1rem;
-}
-
-.buy-tickets-btn {
-  background: linear-gradient(45deg, #4CAF50, #45a049);
-  color: white;
-  border: none;
-  padding: 1.5rem 3rem;
-  font-size: 1.2rem;
-  font-weight: bold;
-  border-radius: 50px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
 .buy-tickets-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(255, 255, 255, 0.5);
 }
 
 @media (max-width: 768px) {
   .hero-section h1 {
     font-size: 2rem;
   }
-  
+
   .price-list {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .buy-tickets-btn {
     padding: 1rem 2rem;
     font-size: 1rem;
