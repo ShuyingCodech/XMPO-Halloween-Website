@@ -1,0 +1,259 @@
+.seat-selection-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding-top: 80px; /* Account for fixed header */
+  padding-bottom: 2rem;
+}
+
+.content-container {
+  display: flex;
+  max-width: 1400px;
+  margin: 0 auto;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.left-section {
+  flex: 2;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.right-section {
+  flex: 1;
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  height: fit-content;
+  position: sticky;
+  top: 100px;
+}
+
+.stage {
+  background-color: #333;
+  color: white;
+  text-align: center;
+  padding: 1rem;
+  margin: 2rem 0;
+  font-weight: bold;
+}
+
+.seating-chart {
+  max-width: 800px;
+  margin: 0 auto;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+.seat-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.row-label {
+  width: 60px;
+  font-size: 0.8rem;
+  color: #666;
+  text-align: right;
+  padding-right: 1rem;
+}
+
+.seat-wrapper {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+}
+
+.seat {
+  width: 20px;
+  height: 20px;
+  border: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 8px;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.seat.red { background-color: #ffebee; border-color: #f44336; }
+.seat.blue { background-color: #e3f2fd; border-color: #2196f3; }
+.seat.green { background-color: #e8f5e8; border-color: #4caf50; }
+.seat.reserved { 
+  background-color: #424242; 
+  color: white; 
+  cursor: not-allowed;
+}
+.seat.selected { 
+  background-color: #ffc107; 
+  border-color: #ff9800;
+  font-weight: bold;
+}
+
+.seat:hover:not(.reserved) {
+  transform: scale(1.1);
+}
+
+.swipe-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1rem 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 2rem 0;
+  justify-content: center;
+}
+
+.legend > div {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.validation-note {
+  background-color: #e3f2fd;
+  padding: 1rem;
+  border-radius: 4px;
+  border-left: 4px solid #2196f3;
+  margin-top: 2rem;
+}
+
+.validation-note p {
+  margin: 0;
+  color: #1976d2;
+}
+
+/* Right Section Styles */
+.seats-selected {
+  margin-bottom: 2rem;
+}
+
+.seats-selected h3 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.ticket-types {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ticket-type {
+  flex: 1;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ticket-type.active {
+  border-color: #4CAF50;
+  background-color: #e8f5e8;
+}
+
+.ticket-type:hover {
+  border-color: #4CAF50;
+}
+
+.selected-seats-display {
+  background-color: #f5f5f5;
+  padding: 1rem;
+  border-radius: 4px;
+  min-height: 50px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.bundles-section {
+  margin-bottom: 2rem;
+}
+
+.bundles-section h3 {
+  margin-bottom: 1rem;
+  color: #333;
+}
+
+.bundle-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.bundle-item:hover:not(.disabled) {
+  background-color: #f5f5f5;
+}
+
+.bundle-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bundle-item input[type="checkbox"] {
+  margin: 0;
+}
+
+.bundle-item label {
+  cursor: pointer;
+  flex: 1;
+}
+
+.bundle-item.disabled label {
+  cursor: not-allowed;
+}
+
+.package-note {
+  background-color: #fff3e0;
+  padding: 0.8rem;
+  border-radius: 4px;
+  border-left: 4px solid #ff9800;
+  margin-top: 1rem;
+}
+
+.package-note p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #f57c00;
+}
+
+.continue-payment-btn {
+  width: 100%;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.continue-payment-btn:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.continue-payment-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
