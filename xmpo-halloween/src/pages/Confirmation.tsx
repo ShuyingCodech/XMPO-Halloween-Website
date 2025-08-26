@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom";
 import "../styles/confirmation.css";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
+import { Button, notification, Upload } from "antd";
+import { DeleteOutlined, UploadOutlined } from "@ant-design/icons";
 
 const Confirmation: React.FC = () => {
   const navigate = useNavigate();
+  const [imageUpload, setImageUpload] = useState<File | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     studentId: "",
@@ -54,13 +57,20 @@ const Confirmation: React.FC = () => {
     navigate("/");
   };
 
+  const handleFileChange = (info: any) => {
+    if (info.fileList.length > 0) {
+      /* If you're using Ant Design's Upload component, make sure you're correctly accessing the originFileObj from info.fileList when handling the upload.**/
+      setImageUpload(info.fileList[0].originFileObj);
+    } else {
+      setImageUpload(null);
+    }
+  };
+
   return (
     <>
       <Header />
       <div className="confirmation-page">
         <div className="confirmation-container">
-          <h2>Confirmation</h2>
-
           <form className="confirmation-form">
             <div className="form-group">
               <label htmlFor="name">Name (as per NRIC)</label>
@@ -119,9 +129,38 @@ const Confirmation: React.FC = () => {
                   onChange={handleFileUpload}
                   accept="image/*,.pdf"
                 />
-                <button type="button" className="upload-btn">
-                  ↑ upload
-                </button>
+                <Upload
+                  id="receipt"
+                  beforeUpload={(imageUpload) => {
+                    const validTypes = ["image/png", "image/jpg", "image/jpeg"];
+                    if (!validTypes.includes(imageUpload.type)) {
+                      notification.error({
+                        message: "Invalid file type",
+                        description:
+                          "Please upload a file of type PNG, JPG, or JPEG!",
+                      });
+                      return Upload.LIST_IGNORE;
+                    }
+                    return false;
+                  }}
+                  onRemove={() => {
+                    setImageUpload(null);
+                    // sessionStorage.setItem("file", "");
+                  }}
+                  onChange={handleFileChange}
+                  maxCount={1}
+                  showUploadList={{
+                    extra: ({ size = 0 }) => (
+                      <span style={{ color: "#cccccc" }}>
+                        ({(size / 1024 / 1024).toFixed(2)}MB)
+                      </span>
+                    ),
+                    showRemoveIcon: true,
+                    removeIcon: <DeleteOutlined style={{ color: "white" }} />,
+                  }}
+                >
+                  <Button icon={<UploadOutlined />}>Upload</Button>
+                </Upload>
                 {formData.paymentReceipt && (
                   <span className="file-name">
                     {formData.paymentReceipt.name}

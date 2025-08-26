@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import "../styles/seatSelection.css";
 import { useNavigate } from "react-router-dom";
 import { DoubleRightOutlined } from "@ant-design/icons";
+import { notification } from "antd";
 // import { firestore } from "../firebase";
 // import { collection, getDocs } from "firebase/firestore";
 import "../styles/common.css";
@@ -13,7 +14,6 @@ const SeatSelection: React.FC = () => {
   const [reservedSeats, setReservedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [ticketType, setTicketType] = useState<"deluxe" | "normal">("deluxe");
   const [selectedPackages, setSelectedPackages] = useState<string[]>([]);
   const navigate = useNavigate();
 
@@ -39,36 +39,66 @@ const SeatSelection: React.FC = () => {
   };
 
   const zones = {
-    R1: { startRow: 1, endRow: 1, color: "reserved" },
-    A: { startRow: 2, endRow: 7, color: "red" },
-    B: { startRow: 8, endRow: 12, color: "blue" },
-    C: { startRow: 13, endRow: 17, color: "green" },
-    R2: { startRow: 18, endRow: 18, color: "reserved" },
+    Normal1: { startRow: 2, endRow: 4, color: "normal" },
+    Deluxe: { startRow: 5, endRow: 9, color: "deluxe" },
+    Normal2: { startRow: 10, endRow: 18, color: "normal" },
   };
 
-  const deluxePrices = { A: 40, B: 30, C: 25 };
-  const normalPrices = { A: 35, B: 25, C: 20 };
+  const seatPrices = { Deluxe: 40, Normal1: 20, Normal2: 20 };
+
+  // Helper function to get row number from seat code
+  const getRowNumber = (seatCode: string) => {
+    const parts = seatCode.split("-");
+    return parseInt(parts[0]);
+  };
+
+  const getZoneType = (seatCode: string) => {
+    const row = getRowNumber(seatCode);
+
+    if (row >= 5 && row <= 9) return "Deluxe";
+    return "Normal";
+  };
+
+  // Group selected seats by zone type
+  const getSelectedSeatsByZone = () => {
+    const deluxeSeats = selectedSeats.filter(
+      (seat) => getZoneType(seat) === "Deluxe"
+    );
+    const normalSeats = selectedSeats.filter(
+      (seat) => getZoneType(seat) === "Normal"
+    );
+
+    return {
+      deluxe: deluxeSeats,
+      normal: normalSeats,
+    };
+  };
+
+  // Check if normal tickets are available (for packages)
+  const hasNormalTickets = () => {
+    return getSelectedSeatsByZone().normal.length > 0;
+  };
 
   const packages = [
     {
       id: "A1",
       name: "Package A1",
-      available: ticketType === "normal" && selectedSeats.length >= 1,
+      available: hasNormalTickets(),
     },
     {
       id: "A2",
       name: "Package A2",
-      available: ticketType === "normal" && selectedSeats.length >= 1,
+      available: hasNormalTickets(),
     },
     {
       id: "B",
       name: "Package B",
-      available: ticketType === "normal" && selectedSeats.length >= 1,
+      available: hasNormalTickets(),
     },
     {
       id: "C",
       name: "Package C",
-      available: ticketType === "normal" && selectedSeats.length >= 1,
+      available: hasNormalTickets(),
     },
   ];
 
@@ -100,55 +130,147 @@ const SeatSelection: React.FC = () => {
       const data = JSON.parse(storedData);
       setSelectedSeats(data.selectedSeats || []);
       setTotalPrice(data.totalPrice || 0);
-      setTicketType(data.ticketType || "deluxe");
       setSelectedPackages(data.selectedPackages || []);
     }
   }, []);
 
-  const currentPrices = ticketType === "deluxe" ? deluxePrices : normalPrices;
+  // Helper function to get seat number from seat code
+  const getSeatNumber = (seatCode: string) => {
+    const parts = seatCode.split("-");
+    return parseInt(parts[1]);
+  };
 
-  const handleSeatClick = (zone: string, row: number, seat: number) => {
-    const seatCode = `${zone}${row}-${seat < 10 ? `0${seat}` : seat}`;
+  // Validation function to check for odd empty seats
+  const validateSeatSelection = (
+    updatedSeats: string[],
+    targetSeat: string,
+    isRemoving: boolean
+  ): boolean => {
+    const targetRow = getRowNumber(targetSeat);
+    const rowSeatCount = seatCounts[targetRow as keyof typeof seatCounts];
+
+    // Generate the actual seat arrangement for this row
+    const evenNumbers = [];
+    const oddNumbers = [];
+    for (let seat = rowSeatCount; seat >= 1; seat--) {
+      if (seat % 2 === 0) evenNumbers.push(seat);
+      else oddNumbers.push(seat);
+    }
+    const allSeatsInRow = [...evenNumbers, ...oddNumbers.reverse()];
+
+    // Get all occupied seats in this row (both selected and reserved)
+    const occupiedSeats = new Set<number>();
+
+    // Add reserved seats in this row
+    reservedSeats.forEach((seat) => {
+      if (getRowNumber(seat) === targetRow) {
+        occupiedSeats.add(getSeatNumber(seat));
+      }
+    });
+
+    // Add currently selected seats in this row (excluding the target seat if removing)
+    updatedSeats.forEach((seat) => {
+      if (
+        getRowNumber(seat) === targetRow &&
+        (isRemoving ? seat !== targetSeat : true)
+      ) {
+        occupiedSeats.add(getSeatNumber(seat));
+      }
+    });
+
+    // Create a boolean array representing occupied status in visual order
+    const seatOccupied = allSeatsInRow.map((seatNum) =>
+      occupiedSeats.has(seatNum)
+    );
+
+    // Find all groups of consecutive empty seats
+    const emptyGroups = [];
+    let currentGroupStart = -1;
+    let currentGroupSize = 0;
+
+    for (let i = 0; i < seatOccupied.length; i++) {
+      if (!seatOccupied[i]) {
+        // Empty seat found
+        if (currentGroupStart === -1) {
+          currentGroupStart = i;
+          currentGroupSize = 1;
+        } else {
+          currentGroupSize++;
+        }
+      } else {
+        // Occupied seat found, end current group if exists
+        if (currentGroupStart !== -1) {
+          emptyGroups.push({
+            start: currentGroupStart,
+            size: currentGroupSize,
+          });
+          currentGroupStart = -1;
+          currentGroupSize = 0;
+        }
+      }
+    }
+
+    // Don't forget the last group if it ends at the row edge
+    if (currentGroupStart !== -1) {
+      emptyGroups.push({
+        start: currentGroupStart,
+        size: currentGroupSize,
+      });
+    }
+
+    // Check if any empty group has odd size and is between occupied seats
+    for (const group of emptyGroups) {
+      const hasLeftNeighbor = group.start > 0 && seatOccupied[group.start - 1];
+      const hasRightNeighbor =
+        group.start + group.size < seatOccupied.length &&
+        seatOccupied[group.start + group.size];
+
+      // If the empty group is between two occupied seats and has odd size, it's invalid
+      if (hasLeftNeighbor && hasRightNeighbor && group.size % 2 === 1) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleSeatClick = (row: number, seat: number) => {
+    const seatCode = `${row < 10 ? `0${row}` : row}-${
+      seat < 10 ? `0${seat}` : seat
+    }`;
     const isSelected = selectedSeats.includes(seatCode);
 
     let updatedSeats;
     let updatedPrice = totalPrice;
 
+    // Determine zone type and pricing
+    const zoneType = getZoneType(seatCode);
+    const price =
+      zoneType === "Deluxe" ? seatPrices.Deluxe : seatPrices.Normal1;
+
     if (isSelected) {
       updatedSeats = selectedSeats.filter((s) => s !== seatCode);
-      updatedPrice -= currentPrices[zone as keyof typeof currentPrices];
+      updatedPrice -= price;
     } else {
       updatedSeats = [...selectedSeats, seatCode];
-      updatedPrice += currentPrices[zone as keyof typeof currentPrices];
+      updatedPrice += price;
     }
 
+    if (!validateSeatSelection(updatedSeats, seatCode, isSelected)) {
+      notification.error({
+        message: "Seat Selection Error",
+        description:
+          "You are not allowed to leave an ODD number of empty seats next to another booked seat in the same row.",
+        duration: 5,
+      });
+      return;
+    }
     setSelectedSeats(updatedSeats);
     setTotalPrice(updatedPrice);
 
     const ticketData = {
       selectedSeats: updatedSeats,
       totalPrice: updatedPrice,
-      ticketType,
-      selectedPackages,
-    };
-    sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
-  };
-
-  const handleTicketTypeChange = (type: "deluxe" | "normal") => {
-    setTicketType(type);
-    // Recalculate price based on new type
-    const newPrices = type === "deluxe" ? deluxePrices : normalPrices;
-    const newTotalPrice = selectedSeats.reduce((total, seat) => {
-      const zone = seat.charAt(0);
-      return total + newPrices[zone as keyof typeof newPrices];
-    }, 0);
-
-    setTotalPrice(newTotalPrice);
-
-    const ticketData = {
-      selectedSeats,
-      totalPrice: newTotalPrice,
-      ticketType: type,
       selectedPackages,
     };
     sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
@@ -164,7 +286,6 @@ const SeatSelection: React.FC = () => {
     const ticketData = {
       selectedSeats,
       totalPrice,
-      ticketType,
       selectedPackages: updatedPackages,
     };
     sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
@@ -195,20 +316,29 @@ const SeatSelection: React.FC = () => {
       );
 
       const seatRow = seatNumbers.map((seatNum) => {
-        const seatCode = `${zone}${row}-${
+        const seatCode = `${row < 10 ? `0${row}` : row}-${
           seatNum < 10 ? `0${seatNum}` : seatNum
         }`;
         const isSelected = selectedSeats.includes(seatCode);
         const isReserved = reservedSeats.includes(seatCode) || isFirstOrLastRow;
+        const isDisabled =
+          (row === 12 || row === 13) && seatNum >= 1 && seatNum <= 3;
+
+        const seatColor =
+          zone && zones[zone as keyof typeof zones]
+            ? zones[zone as keyof typeof zones].color
+            : "normal";
 
         return (
           <div
             key={seatCode}
-            className={`seat ${zones[zone as keyof typeof zones].color} ${
-              isSelected ? "selected" : ""
-            } ${isReserved ? "reserved" : ""}`}
-            onClick={() => !isReserved && handleSeatClick(zone!, row, seatNum)}
-            style={isReserved ? { cursor: "not-allowed" } : {}}
+            className={`seat ${seatColor} ${isSelected ? "selected" : ""} ${
+              isReserved || isDisabled ? "reserved" : ""
+            }`}
+            onClick={() =>
+              !(isReserved || isDisabled) && handleSeatClick(row, seatNum)
+            }
+            style={isReserved || isDisabled ? { cursor: "not-allowed" } : {}}
           >
             {!isFirstOrLastRow && seatNum}
           </div>
@@ -223,14 +353,16 @@ const SeatSelection: React.FC = () => {
       );
     };
 
-    generateSeatRow(1, true);
+    generateSeatRow(1, false); // VIP row - not reserved anymore
     for (let row = 2; row <= 17; row++) {
       generateSeatRow(row, false);
     }
-    generateSeatRow(18, true);
+    generateSeatRow(18, true); // Still reserved
 
     return seatRows;
   };
+
+  const { deluxe: deluxeSeats, normal: normalSeats } = getSelectedSeatsByZone();
 
   return (
     <>
@@ -239,7 +371,6 @@ const SeatSelection: React.FC = () => {
         <div className="content-container">
           <div className="left-section">
             <h2>Seat Selection</h2>
-            <p>(same as bloom in motion)</p>
             <div className="stage">STAGE</div>
 
             {loading ? (
@@ -256,66 +387,67 @@ const SeatSelection: React.FC = () => {
 
             <div className="legend">
               <div style={{ marginBottom: "20px" }}>
-                <span className="seat red"></span> Zone A &nbsp; [RM
-                {currentPrices["A"]}]
+                <span className="seat deluxe"></span> Deluxe &nbsp; [RM
+                {seatPrices["Deluxe"]}]
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <span className="seat blue"></span> Zone B &nbsp; [RM
-                {currentPrices["B"]}]
-              </div>
-              <div style={{ marginBottom: "20px" }}>
-                <span className="seat green"></span> Zone C &nbsp; [RM
-                {currentPrices["C"]}]
+                <span className="seat normal"></span> Normal &nbsp; [RM
+                {seatPrices["Normal1"]}]
               </div>
               <div style={{ marginBottom: "20px" }}>
                 <span className="seat selected"></span> Selected
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <span className="seat reserved"></span> Occupied
+                <span className="seat reserved"></span> Occupied/Disabled
               </div>
-            </div>
-
-            <div className="validation-note">
-              <p>📋 If possible, add validation to avoid leaving empty seat</p>
             </div>
           </div>
 
           <div className="right-section">
             <div className="seats-selected">
               <h3>Seats Selected</h3>
-              <div className="ticket-types">
-                <div
-                  className={`ticket-type ${
-                    ticketType === "deluxe" ? "active" : ""
-                  }`}
-                  onClick={() => handleTicketTypeChange("deluxe")}
-                >
-                  <span>Deluxe</span>
-                  <span>
-                    x {ticketType === "deluxe" ? selectedSeats.length : 0}
-                  </span>
-                </div>
-                <div
-                  className={`ticket-type ${
-                    ticketType === "normal" ? "active" : ""
-                  }`}
-                  onClick={() => handleTicketTypeChange("normal")}
-                >
-                  <span>Normal</span>
-                  <span>
-                    x {ticketType === "normal" ? selectedSeats.length : 0}
-                  </span>
-                </div>
-              </div>
 
-              <div className="selected-seats-display">
-                {selectedSeats.map((seat, index) => (
-                  <span key={seat}>
-                    {seat}
-                    {index < selectedSeats.length - 1 ? ", " : ""}
-                  </span>
-                ))}
-              </div>
+              {deluxeSeats.length > 0 && (
+                <div className="ticket-type-display">
+                  <div className="ticket-type-header ticket-row">
+                    <span className="ticket-type-label">
+                      Deluxe x {deluxeSeats.length}
+                    </span>
+                    <div className="selected-seats-display">
+                      {deluxeSeats.map((seat, index) => (
+                        <span key={seat}>
+                          {seat}
+                          {index < deluxeSeats.length - 1 ? ", " : ""}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {normalSeats.length > 0 && (
+                <div className="ticket-type-display">
+                  <div className="ticket-type-header ticket-row">
+                    <span className="ticket-type-label">
+                      Normal x {normalSeats.length}
+                    </span>
+                    <div className="selected-seats-display">
+                      {normalSeats.map((seat, index) => (
+                        <span key={seat}>
+                          {seat}
+                          {index < normalSeats.length - 1 ? ", " : ""}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedSeats.length === 0 && (
+                <div className="no-seats-selected">
+                  <p>No seats selected</p>
+                </div>
+              )}
             </div>
 
             <div className="bundles-section">
@@ -346,16 +478,18 @@ const SeatSelection: React.FC = () => {
                   <label htmlFor={pkg.id}>{pkg.name} ( details... )</label>
                 </div>
               ))}
+            </div>
 
-              <div className="package-note">
-                <p>option only available if normal ticket ≥ 1</p>
-              </div>
+            <div className="total-price">
+              <h3>Total: RM {totalPrice}</h3>
             </div>
 
             <button
               className="continue-payment-btn"
               disabled={selectedSeats.length === 0}
-              onClick={() => navigate("/payment")}
+              onClick={() => {
+                navigate("/payment");
+              }}
             >
               Continue to Payment
             </button>
