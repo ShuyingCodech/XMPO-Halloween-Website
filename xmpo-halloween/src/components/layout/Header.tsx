@@ -22,10 +22,19 @@ const Header: React.FC = () => {
         </div>
 
         <div className="nav-buttons">
-          <button className="nav-btn" onClick={scrollToFooter}>
+          <button
+            className="nav-btn"
+            onClick={() =>
+              (window.location.href =
+                "https://xmposite.wixsite.com/xmumphilharmonic/about")
+            }
+          >
             About XMPO
           </button>
-          <button className="nav-btn" onClick={scrollToFooter}>
+          <button className="nav-btn" onClick={() =>
+              (window.location.href =
+                "https://xmposite.wixsite.com/xmumphilharmonic/tickets")
+            }>
             Buy Tickets
           </button>
         </div>

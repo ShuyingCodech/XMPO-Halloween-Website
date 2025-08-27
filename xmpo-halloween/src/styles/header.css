@@ -57,7 +57,7 @@
   transform: translateY(-1px);
 }
 
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .header-container {
     padding: 0 1rem;
     flex-direction: column;

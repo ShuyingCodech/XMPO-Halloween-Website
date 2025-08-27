@@ -102,10 +102,21 @@ const Payment: React.FC = () => {
             {cartItems.map((item, index) => (
               <div key={index} className={`cart-item ${item.type}`}>
                 <div className="item-details">
-                  <span className="item-name">
-                    {item.name} x {item.quantity}
-                  </span>
-                  <span className="item-price">RM {item.price}</span>
+                  <img
+                    src={
+                      item.type === "normal"
+                        ? "./images/normal-t.avif"
+                        : "./images/deluxe-t.avif"
+                    }
+                    alt={`${item.name} Ticket`}
+                    className="item-image"
+                  />
+                  <div className="item-content">
+                    <span className="item-name">
+                      {item.name} x {item.quantity}
+                    </span>
+                    <span className="item-price">RM {item.price}</span>
+                  </div>
                 </div>
               </div>
             ))}
