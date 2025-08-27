@@ -39,10 +39,9 @@
 }
 
 .seating-chart {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   overflow-x: auto;
-  padding: 1rem;
 }
 
 .seat-row {
@@ -52,7 +51,7 @@
 }
 
 .row-label {
-  width: 60px;
+  min-width: 60px;
   font-size: 0.8rem;
   color: #666;
   text-align: right;
@@ -63,6 +62,7 @@
   display: flex;
   gap: 2px;
   flex: 1;
+  justify-content: center;
 }
 
 .seat {
@@ -306,4 +306,10 @@
 .continue-payment-btn:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .seat-selection-page {
+    padding-top: 233px;
+  }
 }

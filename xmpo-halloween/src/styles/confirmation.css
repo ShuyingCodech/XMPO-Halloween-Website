@@ -153,6 +153,10 @@
 }
 
 @media (max-width: 480px) {
+  .confirmation-page {
+    padding-top: 233px;
+  }
+
   .seating-chart {
     padding: 0.5rem;
   }
