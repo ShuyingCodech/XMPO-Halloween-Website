@@ -8,6 +8,7 @@ import { notification } from "antd";
 import "../styles/common.css";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
+import { getReservedSeats } from "../services/firebaseService";
 
 const SeatSelection: React.FC = () => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -103,27 +104,24 @@ const SeatSelection: React.FC = () => {
   ];
 
   const fetchReservedSeats = async () => {
-    const reservedSeats: string[] = [];
     try {
-      //   const querySnapshot = await getDocs(collection(firestore, "payments"));
-      //   querySnapshot.forEach((doc) => {
-      //     const data = doc.data();
-      //     reservedSeats.push(...(data.selectedSeats || []));
-      //   });
+      setLoading(true);
+      const reserved = await getReservedSeats();
+      setReservedSeats(reserved);
     } catch (error) {
       console.error("Error fetching reserved seats: ", error);
+      notification.error({
+        message: "Error",
+        description: "Failed to fetch reserved seats. Please refresh the page.",
+        duration: 5,
+      });
     } finally {
       setLoading(false);
     }
-    return reservedSeats;
   };
 
   useEffect(() => {
-    const loadReservedSeats = async () => {
-      const reserved = await fetchReservedSeats();
-      setReservedSeats(reserved);
-    };
-    loadReservedSeats();
+    fetchReservedSeats();
 
     const storedData = sessionStorage.getItem("ticketData");
     if (storedData) {
