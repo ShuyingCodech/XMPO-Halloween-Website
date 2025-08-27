@@ -174,3 +174,11 @@
     padding: 1rem;
   }
 }
+
+.booking-summary {
+  text-align: center;
+  margin: 2rem 0;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
