@@ -140,98 +140,109 @@ const SeatSelection: React.FC = () => {
     return parseInt(parts[1]);
   };
 
-  // Validation function to check for odd empty seats
-  const validateSeatSelection = (
-    updatedSeats: string[],
-    targetSeat: string,
-    isRemoving: boolean
-  ): boolean => {
-    const targetRow = getRowNumber(targetSeat);
-    const rowSeatCount = seatCounts[targetRow as keyof typeof seatCounts];
+  // Validation function to check for odd empty seats - now used for payment validation
+  const validateAllSeatSelections = (): {
+    isValid: boolean;
+    invalidRows: number[];
+  } => {
+    const invalidRows: number[] = [];
 
-    // Generate the actual seat arrangement for this row
-    const evenNumbers = [];
-    const oddNumbers = [];
-    for (let seat = rowSeatCount; seat >= 1; seat--) {
-      if (seat % 2 === 0) evenNumbers.push(seat);
-      else oddNumbers.push(seat);
-    }
-    const allSeatsInRow = [...evenNumbers, ...oddNumbers.reverse()];
-
-    // Get all occupied seats in this row (both selected and reserved)
-    const occupiedSeats = new Set<number>();
-
-    // Add reserved seats in this row
-    reservedSeats.forEach((seat) => {
-      if (getRowNumber(seat) === targetRow) {
-        occupiedSeats.add(getSeatNumber(seat));
-      }
+    // Get all rows that have selected seats
+    const rowsWithSelections = new Set<number>();
+    selectedSeats.forEach((seat) => {
+      rowsWithSelections.add(getRowNumber(seat));
     });
 
-    // Add currently selected seats in this row (excluding the target seat if removing)
-    updatedSeats.forEach((seat) => {
-      if (
-        getRowNumber(seat) === targetRow &&
-        (isRemoving ? seat !== targetSeat : true)
-      ) {
-        occupiedSeats.add(getSeatNumber(seat));
+    // Check each row with selections
+    for (const targetRow of Array.from(rowsWithSelections)) {
+      const rowSeatCount = seatCounts[targetRow as keyof typeof seatCounts];
+
+      // Generate the actual seat arrangement for this row
+      const evenNumbers = [];
+      const oddNumbers = [];
+      for (let seat = rowSeatCount; seat >= 1; seat--) {
+        if (seat % 2 === 0) evenNumbers.push(seat);
+        else oddNumbers.push(seat);
       }
-    });
+      const allSeatsInRow = [...evenNumbers, ...oddNumbers.reverse()];
 
-    // Create a boolean array representing occupied status in visual order
-    const seatOccupied = allSeatsInRow.map((seatNum) =>
-      occupiedSeats.has(seatNum)
-    );
+      // Get all occupied seats in this row (both selected and reserved)
+      const occupiedSeats = new Set<number>();
 
-    // Find all groups of consecutive empty seats
-    const emptyGroups = [];
-    let currentGroupStart = -1;
-    let currentGroupSize = 0;
-
-    for (let i = 0; i < seatOccupied.length; i++) {
-      if (!seatOccupied[i]) {
-        // Empty seat found
-        if (currentGroupStart === -1) {
-          currentGroupStart = i;
-          currentGroupSize = 1;
-        } else {
-          currentGroupSize++;
+      // Add reserved seats in this row
+      reservedSeats.forEach((seat) => {
+        if (getRowNumber(seat) === targetRow) {
+          occupiedSeats.add(getSeatNumber(seat));
         }
-      } else {
-        // Occupied seat found, end current group if exists
-        if (currentGroupStart !== -1) {
-          emptyGroups.push({
-            start: currentGroupStart,
-            size: currentGroupSize,
-          });
-          currentGroupStart = -1;
-          currentGroupSize = 0;
-        }
-      }
-    }
-
-    // Don't forget the last group if it ends at the row edge
-    if (currentGroupStart !== -1) {
-      emptyGroups.push({
-        start: currentGroupStart,
-        size: currentGroupSize,
       });
-    }
 
-    // Check if any empty group has odd size and is between occupied seats
-    for (const group of emptyGroups) {
-      const hasLeftNeighbor = group.start > 0 && seatOccupied[group.start - 1];
-      const hasRightNeighbor =
-        group.start + group.size < seatOccupied.length &&
-        seatOccupied[group.start + group.size];
+      // Add currently selected seats in this row
+      selectedSeats.forEach((seat) => {
+        if (getRowNumber(seat) === targetRow) {
+          occupiedSeats.add(getSeatNumber(seat));
+        }
+      });
 
-      // If the empty group is between two occupied seats and has odd size, it's invalid
-      if (hasLeftNeighbor && hasRightNeighbor && group.size % 2 === 1) {
-        return false;
+      // Create a boolean array representing occupied status in visual order
+      const seatOccupied = allSeatsInRow.map((seatNum) =>
+        occupiedSeats.has(seatNum)
+      );
+
+      // Find all groups of consecutive empty seats
+      const emptyGroups = [];
+      let currentGroupStart = -1;
+      let currentGroupSize = 0;
+
+      for (let i = 0; i < seatOccupied.length; i++) {
+        if (!seatOccupied[i]) {
+          // Empty seat found
+          if (currentGroupStart === -1) {
+            currentGroupStart = i;
+            currentGroupSize = 1;
+          } else {
+            currentGroupSize++;
+          }
+        } else {
+          // Occupied seat found, end current group if exists
+          if (currentGroupStart !== -1) {
+            emptyGroups.push({
+              start: currentGroupStart,
+              size: currentGroupSize,
+            });
+            currentGroupStart = -1;
+            currentGroupSize = 0;
+          }
+        }
+      }
+
+      // Don't forget the last group if it ends at the row edge
+      if (currentGroupStart !== -1) {
+        emptyGroups.push({
+          start: currentGroupStart,
+          size: currentGroupSize,
+        });
+      }
+
+      // Check if any empty group has odd size and is between occupied seats
+      for (const group of emptyGroups) {
+        const hasLeftNeighbor =
+          group.start > 0 && seatOccupied[group.start - 1];
+        const hasRightNeighbor =
+          group.start + group.size < seatOccupied.length &&
+          seatOccupied[group.start + group.size];
+
+        // If the empty group is between two occupied seats and has odd size, it's invalid
+        if (hasLeftNeighbor && hasRightNeighbor && group.size % 2 === 1) {
+          invalidRows.push(targetRow);
+          break; // No need to check more groups in this row
+        }
       }
     }
 
-    return true;
+    return {
+      isValid: invalidRows.length === 0,
+      invalidRows: invalidRows,
+    };
   };
 
   const handleSeatClick = (row: number, seat: number) => {
@@ -256,15 +267,7 @@ const SeatSelection: React.FC = () => {
       updatedPrice += price;
     }
 
-    if (!validateSeatSelection(updatedSeats, seatCode, isSelected)) {
-      notification.error({
-        message: "Seat Selection Error",
-        description:
-          "You are not allowed to leave an ODD number of empty seats next to another booked seat in the same row.",
-        duration: 5,
-      });
-      return;
-    }
+    // No validation here anymore - just update the selection
     setSelectedSeats(updatedSeats);
     setTotalPrice(updatedPrice);
 
@@ -289,6 +292,38 @@ const SeatSelection: React.FC = () => {
       selectedPackages: updatedPackages,
     };
     sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
+  };
+
+  const handleContinueToPayment = () => {
+    if (selectedSeats.length === 0) {
+      notification.error({
+        message: "No Seats Selected",
+        description:
+          "Please select at least one seat before continuing to payment.",
+        duration: 3,
+      });
+      return;
+    }
+
+    // Validate seat selections before proceeding
+    const validation = validateAllSeatSelections();
+
+    if (!validation.isValid) {
+      const rowsText =
+        validation.invalidRows.length === 1
+          ? `row ${validation.invalidRows[0]}`
+          : `rows ${validation.invalidRows.join(", ")}`;
+
+      notification.error({
+        message: "Invalid Seat Selection",
+        description: `You cannot leave an ODD number of empty seats between occupied seats in ${rowsText}. Please adjust your seat selection.`,
+        duration: 8,
+      });
+      return;
+    }
+
+    // If validation passes, proceed to payment
+    navigate("/payment");
   };
 
   const generateSeatNumbers = (rowCount: number) => {
@@ -370,7 +405,7 @@ const SeatSelection: React.FC = () => {
       <div className="seat-selection-page">
         <div className="content-container">
           <div className="left-section">
-            <h2>Seat Selection</h2>
+            <h4>Select Seats</h4>
             <div className="stage">STAGE</div>
 
             {loading ? (
@@ -405,7 +440,7 @@ const SeatSelection: React.FC = () => {
 
           <div className="right-section">
             <div className="seats-selected">
-              <h3>Seats Selected</h3>
+              <h5>Seats Selected</h5>
 
               {deluxeSeats.length > 0 && (
                 <div className="ticket-type-display">
@@ -444,13 +479,13 @@ const SeatSelection: React.FC = () => {
               )}
 
               {selectedSeats.length === 0 && (
-                <div className="no-seats-selected">
+                <div className="selected-seats-display">
                   <p>No seats selected</p>
                 </div>
               )}
             </div>
 
-            <div className="bundles-section">
+            {/* <div className="bundles-section">
               <h3>Bundles</h3>
 
               <div className="bundle-item">
@@ -478,18 +513,16 @@ const SeatSelection: React.FC = () => {
                   <label htmlFor={pkg.id}>{pkg.name} ( details... )</label>
                 </div>
               ))}
-            </div>
+            </div> */}
 
             <div className="total-price">
-              <h3>Total: RM {totalPrice}</h3>
+              <h6>Total: RM {totalPrice}</h6>
             </div>
 
             <button
               className="continue-payment-btn"
               disabled={selectedSeats.length === 0}
-              onClick={() => {
-                navigate("/payment");
-              }}
+              onClick={handleContinueToPayment}
             >
               Continue to Payment
             </button>

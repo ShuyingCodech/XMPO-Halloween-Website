@@ -40,7 +40,7 @@
 
 .form-group input {
   padding: 0.8rem;
-  border: 2px solid #e0e0e0;
+  border: 1px solid #e0e0e0;
   border-radius: 4px;
   font-size: 1rem;
   transition: border-color 0.3s ease;
@@ -48,7 +48,7 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #4caf50;
+  border-color: #ff8a00;
 }
 
 .form-group input::placeholder {
@@ -81,12 +81,12 @@
 }
 
 .file-name {
-  color: #4caf50;
+  color: #ff8a00;
   font-size: 0.9rem;
 }
 
 .confirm-btn {
-  background-color: #4caf50;
+  background-color: #ff8a00;
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -98,7 +98,7 @@
 }
 
 .confirm-btn:hover {
-  background-color: #45a049;
+  background-color: #e57a00;
 }
 
 /* Responsive Design */

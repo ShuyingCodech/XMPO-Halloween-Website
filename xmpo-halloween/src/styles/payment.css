@@ -14,7 +14,7 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.payment-container h2 {
+.payment-container h4 {
   text-align: center;
   margin-bottom: 2rem;
   color: #333;
@@ -39,14 +39,10 @@
   min-height: 120px;
 }
 
-.cart-item.deluxe {
-  background-color: #e8f5e8;
-  border: 2px solid #4caf50;
-}
-
+.cart-item.deluxe,
 .cart-item.normal {
-  background-color: #e8f5e8;
-  border: 2px solid #4caf50;
+  background-color: #f9f9f9;
+  border: 1px solid #e9ecef;
 }
 
 .cart-item.keychain,
@@ -72,6 +68,12 @@
   color: #666;
 }
 
+.item-price {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ff8a00;
+}
+
 .total-section {
   text-align: center;
   margin: 2rem 0;
@@ -93,7 +95,6 @@
 
 .bank-qr {
   background-color: #e8f5e8;
-  border: 2px solid #4caf50;
   padding: 2rem;
   border-radius: 8px;
   font-weight: bold;
@@ -102,11 +103,13 @@
 
 .terms-section {
   margin: 2rem 0;
+  text-align: left; /* Align terms section to the left */
 }
 
-.terms-section h3 {
+.terms-section h5 {
   margin-bottom: 1rem;
   color: #333;
+  text-align: left;
 }
 
 .checkbox-label {
@@ -114,6 +117,7 @@
   align-items: center;
   gap: 0.5rem;
   cursor: pointer;
+  text-align: left; /* Ensure checkbox label is left-aligned */
 }
 
 .checkbox-label input[type="checkbox"] {
@@ -122,7 +126,7 @@
 
 .continue-btn {
   width: 100%;
-  background-color: #4caf50;
+  background-color: #ff8a00;
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -133,7 +137,7 @@
 }
 
 .continue-btn:hover:not(:disabled) {
-  background-color: #45a049;
+  background-color: #e57a00;
 }
 
 .continue-btn:disabled {
