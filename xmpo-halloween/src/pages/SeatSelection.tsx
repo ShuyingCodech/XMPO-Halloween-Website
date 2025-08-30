@@ -40,12 +40,16 @@ const SeatSelection: React.FC = () => {
   };
 
   const zones = {
-    Normal1: { startRow: 2, endRow: 4, color: "normal" },
+    Standard1: { startRow: 2, endRow: 4, color: "normal" },
     Deluxe: { startRow: 5, endRow: 9, color: "deluxe" },
-    Normal2: { startRow: 10, endRow: 18, color: "normal" },
+    Standard2: { startRow: 10, endRow: 18, color: "normal" },
   };
 
-  const seatPrices = { Deluxe: 40, Normal1: 20, Normal2: 20 };
+  const seatPrices = {
+    Deluxe: { original: 45, earlyBird: 40 },
+    Standard1: { original: 25, earlyBird: 20 },
+    Standard2: { original: 25, earlyBird: 20 },
+  };
 
   // Helper function to get row number from seat code
   const getRowNumber = (seatCode: string) => {
@@ -57,7 +61,7 @@ const SeatSelection: React.FC = () => {
     const row = getRowNumber(seatCode);
 
     if (row >= 5 && row <= 9) return "Deluxe";
-    return "Normal";
+    return "Standard";
   };
 
   // Group selected seats by zone type
@@ -66,7 +70,7 @@ const SeatSelection: React.FC = () => {
       (seat) => getZoneType(seat) === "Deluxe"
     );
     const normalSeats = selectedSeats.filter(
-      (seat) => getZoneType(seat) === "Normal"
+      (seat) => getZoneType(seat) === "Standard"
     );
 
     return {
@@ -76,7 +80,7 @@ const SeatSelection: React.FC = () => {
   };
 
   // Check if normal tickets are available (for packages)
-  const hasNormalTickets = () => {
+  const hasStandardTickets = () => {
     return getSelectedSeatsByZone().normal.length > 0;
   };
 
@@ -84,22 +88,22 @@ const SeatSelection: React.FC = () => {
     {
       id: "A1",
       name: "Package A1",
-      available: hasNormalTickets(),
+      available: hasStandardTickets(),
     },
     {
       id: "A2",
       name: "Package A2",
-      available: hasNormalTickets(),
+      available: hasStandardTickets(),
     },
     {
       id: "B",
       name: "Package B",
-      available: hasNormalTickets(),
+      available: hasStandardTickets(),
     },
     {
       id: "C",
       name: "Package C",
-      available: hasNormalTickets(),
+      available: hasStandardTickets(),
     },
   ];
 
@@ -252,10 +256,12 @@ const SeatSelection: React.FC = () => {
     let updatedSeats;
     let updatedPrice = totalPrice;
 
-    // Determine zone type and pricing
+    // Determine zone type and pricing (using early bird prices)
     const zoneType = getZoneType(seatCode);
     const price =
-      zoneType === "Deluxe" ? seatPrices.Deluxe : seatPrices.Normal1;
+      zoneType === "Deluxe"
+        ? seatPrices.Deluxe.earlyBird
+        : seatPrices.Standard1.earlyBird;
 
     if (isSelected) {
       updatedSeats = selectedSeats.filter((s) => s !== seatCode);
@@ -334,6 +340,15 @@ const SeatSelection: React.FC = () => {
     return [...evenNumbers, ...oddNumbers.reverse()];
   };
 
+  const formatSeatList = (seats: string[]) => {
+    return seats.map((seat, index) => (
+      <span key={seat}>
+        {seat}
+        {index < seats.length - 1 ? ", " : ""}
+      </span>
+    ));
+  };
+
   const renderSeats = () => {
     const seatRows: React.ReactElement[] = [];
 
@@ -404,6 +419,25 @@ const SeatSelection: React.FC = () => {
         <div className="content-container">
           <div className="left-section">
             <h4>Select Seats</h4>
+
+            {/* Legend moved above seats */}
+            <div className="legend">
+              <div>
+                <span className="seat deluxe"></span> Deluxe &nbsp; [RM
+                {seatPrices["Deluxe"].earlyBird}]
+              </div>
+              <div>
+                <span className="seat normal"></span> Standard &nbsp; [RM
+                {seatPrices["Standard1"].earlyBird}]
+              </div>
+              <div>
+                <span className="seat selected"></span> Selected
+              </div>
+              <div>
+                <span className="seat reserved"></span> Sold
+              </div>
+            </div>
+
             <div className="stage">STAGE</div>
 
             {loading ? (
@@ -417,26 +451,15 @@ const SeatSelection: React.FC = () => {
                 </span>
               </>
             )}
-
-            <div className="legend">
-              <div style={{ marginBottom: "20px" }}>
-                <span className="seat deluxe"></span> Deluxe &nbsp; [RM
-                {seatPrices["Deluxe"]}]
-              </div>
-              <div style={{ marginBottom: "20px" }}>
-                <span className="seat normal"></span> Normal &nbsp; [RM
-                {seatPrices["Normal1"]}]
-              </div>
-              <div style={{ marginBottom: "20px" }}>
-                <span className="seat selected"></span> Selected
-              </div>
-              <div style={{ marginBottom: "20px" }}>
-                <span className="seat reserved"></span> Occupied/Disabled
-              </div>
-            </div>
           </div>
 
           <div className="right-section">
+            {/* Early Bird Promo at top */}
+            <div className="early-bird-promo">
+              <h5>🎉 Early Bird Promo</h5>
+              <p>Special pricing available now!</p>
+            </div>
+
             <div className="seats-selected">
               <h5>Seats Selected</h5>
 
@@ -447,13 +470,17 @@ const SeatSelection: React.FC = () => {
                       Deluxe x {deluxeSeats.length}
                     </span>
                     <div className="selected-seats-display">
-                      {deluxeSeats.map((seat, index) => (
-                        <span key={seat}>
-                          {seat}
-                          {index < deluxeSeats.length - 1 ? ", " : ""}
-                        </span>
-                      ))}
+                      {formatSeatList(deluxeSeats)}
                     </div>
+                  </div>
+                  <div className="price-display">
+                    <span className="original-price">
+                      RM{seatPrices.Deluxe.original}
+                    </span>
+                    <span className="current-price">
+                      RM{seatPrices.Deluxe.earlyBird}
+                    </span>
+                    <span className="quantity">x {deluxeSeats.length}</span>
                   </div>
                 </div>
               )}
@@ -462,16 +489,20 @@ const SeatSelection: React.FC = () => {
                 <div className="ticket-type-display">
                   <div className="ticket-type-header ticket-row">
                     <span className="ticket-type-label">
-                      Normal x {normalSeats.length}
+                      Standard x {normalSeats.length}
                     </span>
                     <div className="selected-seats-display">
-                      {normalSeats.map((seat, index) => (
-                        <span key={seat}>
-                          {seat}
-                          {index < normalSeats.length - 1 ? ", " : ""}
-                        </span>
-                      ))}
+                      {formatSeatList(normalSeats)}
                     </div>
+                  </div>
+                  <div className="price-display">
+                    <span className="original-price">
+                      RM{seatPrices.Standard1.original}
+                    </span>
+                    <span className="current-price">
+                      RM{seatPrices.Standard1.earlyBird}
+                    </span>
+                    <span className="quantity">x {normalSeats.length}</span>
                   </div>
                 </div>
               )}

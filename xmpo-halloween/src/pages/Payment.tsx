@@ -8,6 +8,7 @@ interface CartItem {
   type: string;
   name: string;
   quantity: number;
+  unitPrice: number;
   price: number;
 }
 
@@ -21,7 +22,7 @@ const Payment: React.FC = () => {
   const getZoneType = (seatCode: string) => {
     const row = parseInt(seatCode.split("-")[0]);
     if (row >= 5 && row <= 9) return "Deluxe";
-    return "Normal";
+    return "Standard";
   };
 
   // Helper function to group seats by zone
@@ -30,7 +31,7 @@ const Payment: React.FC = () => {
       (seat) => getZoneType(seat) === "Deluxe"
     );
     const normalSeats = selectedSeats.filter(
-      (seat) => getZoneType(seat) === "Normal"
+      (seat) => getZoneType(seat) === "Standard"
     );
 
     return {
@@ -46,7 +47,7 @@ const Payment: React.FC = () => {
       const items: CartItem[] = [];
 
       if (data.selectedSeats && data.selectedSeats.length > 0) {
-        const seatPrices = { Deluxe: 40, Normal: 20 };
+        const seatPrices = { Deluxe: 40, Standard: 20 };
         const { deluxe: deluxeSeats, normal: normalSeats } =
           getSelectedSeatsByZone(data.selectedSeats);
 
@@ -56,6 +57,7 @@ const Payment: React.FC = () => {
             type: "deluxe",
             name: "Deluxe Ticket",
             quantity: deluxeSeats.length,
+            unitPrice: seatPrices.Deluxe,
             price: deluxeSeats.length * seatPrices.Deluxe,
           });
         }
@@ -64,24 +66,22 @@ const Payment: React.FC = () => {
         if (normalSeats.length > 0) {
           items.push({
             type: "normal",
-            name: "Normal Ticket",
+            name: "Standard Ticket",
             quantity: normalSeats.length,
-            price: normalSeats.length * seatPrices.Normal,
+            unitPrice: seatPrices.Standard,
+            price: normalSeats.length * seatPrices.Standard,
           });
         }
       }
-
-      // TODO later: Add merchandise items (placeholder)
-      // items.push(
-      //   { type: "keychain", name: "keychain", quantity: 0, price: 0 },
-      //   { type: "keychain-set", name: "keychain set", quantity: 0, price: 0 },
-      //   { type: "canvas-bag", name: "canvas bag", quantity: 0, price: 0 }
-      // );
 
       setCartItems(items);
       setTotal(data.totalPrice || 0);
     }
   }, []);
+
+  const handleBack = () => {
+    navigate("/seat-selection");
+  };
 
   const handleContinue = () => {
     if (!agreedToTerms) {
@@ -98,10 +98,17 @@ const Payment: React.FC = () => {
         <div className="payment-container">
           <h4>Your Cart</h4>
 
-          <div className="cart-items">
+          <div className="cart-receipt">
+            <div className="receipt-header">
+              <div className="header-item">Item</div>
+              <div className="header-qty">Qty</div>
+              <div className="header-unit-price">Unit Price</div>
+              <div className="header-subtotal">Subtotal</div>
+            </div>
+
             {cartItems.map((item, index) => (
-              <div key={index} className={`cart-item ${item.type}`}>
-                <div className="item-details">
+              <div key={index} className={`receipt-item ${item.type}`}>
+                <div className="item-info">
                   <img
                     src={
                       item.type === "normal"
@@ -111,29 +118,103 @@ const Payment: React.FC = () => {
                     alt={`${item.name} Ticket`}
                     className="item-image"
                   />
-                  <div className="item-content">
-                    <span className="item-name">
-                      {item.name} x {item.quantity}
-                    </span>
-                    <span className="item-price">RM {item.price}</span>
-                  </div>
+                  <span className="item-name">{item.name}</span>
                 </div>
+                <div className="item-qty">{item.quantity}</div>
+                <div className="item-unit-price">RM {item.unitPrice}</div>
+                <div className="item-subtotal">RM {item.price}</div>
               </div>
             ))}
-          </div>
 
-          <div className="total-section">
-            <h3>Total: RM {total}</h3>
+            <div className="receipt-divider"></div>
+
+            <div className="receipt-total">
+              <div className="total-label">Total Amount:</div>
+              <div className="total-amount">RM {total}</div>
+            </div>
           </div>
 
           <div className="payment-method">
-            <div className="bank-qr">
-              <p>Bank QR</p>
+            <div className="bank-details">
+              <h5>Bank Transfer Details</h5>
+              <div className="bank-info">
+                <p>
+                  <strong>Bank:</strong> Maybank
+                </p>
+                <p>
+                  <strong>Account Name:</strong> Philharmonic Orchestra Society
+                  of XMUM
+                </p>
+                <p>
+                  <strong>Account Number:</strong> 562432548392
+                </p>
+              </div>
+              <div className="bank-qr">
+                <img
+                  src="./images/bank-QR.jpg"
+                  alt="Bank QR Code"
+                  className="qr-image"
+                />
+              </div>
+              <div className="payment-reminder">
+                <p className="reminder-text">
+                  📸{" "}
+                  <strong>
+                    Remember to screenshot proof of payment for submission!
+                  </strong>
+                </p>
+              </div>
             </div>
           </div>
 
           <div className="terms-section">
             <h5>Terms and Conditions</h5>
+            <div className="terms-content">
+              <ol>
+                <li>
+                  Children aged <strong>4 years old and below</strong> are
+                  strictly prohibited from entering.
+                </li>
+                <li>
+                  All ticket sales are final. Tickets are non-refundable and
+                  cannot be canceled once purchased.
+                </li>
+                <li>
+                  Ensure the payment amount matches the total displayed after
+                  seat selection. Any incorrect transfers will not be refunded.
+                </li>
+                <li>
+                  Upon successful payment, a confirmation email will be sent to
+                  the provided email address. Please ensure your contact details
+                  are accurate.
+                </li>
+                <li>
+                  Present your confirmation email at the ticket redemption booth
+                  to collect your physical ticket.
+                </li>
+                <li>
+                  The exact ticket redemption date will be announced on our
+                  official Instagram page.
+                </li>
+                <li>A valid ticket is required for entry to the venue.</li>
+                <li>No food or drinks are allowed except for plain water.</li>
+                <li>
+                  Attendees are required to behave respectfully and adhere to
+                  all venue rules and regulations. We reserve the right to
+                  refuse entry or remove anyone in violation of these policies,
+                  without refund.
+                </li>
+                <li>
+                  XMUM Philharmonic Orchestra reserves the right to amend the
+                  Terms and Conditions at any time.
+                </li>
+                <li>
+                  For inquiries, please contact Tee Zhi Yen (+60 1151110830) or
+                  Khoo Li Ling (+60 172009299) via WhatsApp.
+                </li>
+              </ol>
+            </div>
+
             <label className="checkbox-label">
               <input
                 type="checkbox"
@@ -144,13 +225,18 @@ const Payment: React.FC = () => {
             </label>
           </div>
 
-          <button
-            className="continue-btn"
-            onClick={handleContinue}
-            disabled={!agreedToTerms}
-          >
-            Continue
-          </button>
+          <div className="action-buttons">
+            <button className="back-btn" onClick={handleBack}>
+              Back
+            </button>
+            <button
+              className="continue-btn"
+              onClick={handleContinue}
+              disabled={!agreedToTerms}
+            >
+              Confirm
+            </button>
+          </div>
         </div>
       </div>
       <Footer />

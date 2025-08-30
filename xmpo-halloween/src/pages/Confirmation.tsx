@@ -35,6 +35,28 @@ const Confirmation: React.FC = () => {
     paymentReceipt: null as File | null,
   });
 
+  // Helper function to get zone type from seat code
+  const getZoneType = (seatCode: string) => {
+    const row = parseInt(seatCode.split("-")[0]);
+    if (row >= 5 && row <= 9) return "Deluxe";
+    return "Standard";
+  };
+
+  // Helper function to group seats by zone
+  const getSelectedSeatsByZone = (selectedSeats: string[]) => {
+    const deluxeSeats = selectedSeats.filter(
+      (seat) => getZoneType(seat) === "Deluxe"
+    );
+    const normalSeats = selectedSeats.filter(
+      (seat) => getZoneType(seat) === "Standard"
+    );
+
+    return {
+      deluxe: deluxeSeats,
+      normal: normalSeats,
+    };
+  };
+
   useEffect(() => {
     // Load ticket data from session storage
     const storedTicketData = sessionStorage.getItem("ticketData");
@@ -53,9 +75,10 @@ const Confirmation: React.FC = () => {
 
       // Ensure seatTypes exists with proper structure
       if (!data.seatTypes) {
+        const seatsByZone = getSelectedSeatsByZone(data.selectedSeats || []);
         data.seatTypes = {
-          deluxe: [],
-          normal: [],
+          deluxe: seatsByZone.deluxe,
+          normal: seatsByZone.normal,
         };
       }
 
@@ -163,6 +186,10 @@ const Confirmation: React.FC = () => {
     return true;
   };
 
+  const handleBack = () => {
+    navigate("/payment");
+  };
+
   const handleConfirm = async () => {
     if (!validateForm() || !ticketData) {
       return;
@@ -212,12 +239,6 @@ const Confirmation: React.FC = () => {
         description: `Your booking has been submitted successfully.`,
         duration: 8,
       });
-
-      // notification.success({
-      //   message: "Booking Confirmed!",
-      //   description: `Your booking has been submitted successfully. Booking ID: ${result.bookingId}. You will receive a confirmation email shortly.`,
-      //   duration: 8,
-      // });
 
       // Clear session storage
       sessionStorage.removeItem("ticketData");
@@ -279,34 +300,53 @@ const Confirmation: React.FC = () => {
         <div className="confirmation-container">
           <h4>Confirm Your Booking</h4>
 
-          {/* Booking Summary */}
+          {/* Enhanced Booking Summary */}
           <div className="booking-summary">
             <h6>Booking Summary</h6>
-            <div className="summary-item">
-              <span>Selected Seats: &nbsp;</span>
-              <span>{ticketData.selectedSeats.join(", ")}</span>
+
+            <div className="summary-section">
+              <div className="summary-item">
+                <span>Selected Seats:</span>
+                <span>{ticketData.selectedSeats.join(", ")}</span>
+              </div>
             </div>
-            {ticketData.seatTypes?.deluxe?.length > 0 && (
-              <div className="summary-item">
-                <span>Deluxe Tickets:</span>
-                <span>{ticketData.seatTypes.deluxe.length} x RM 40</span>
-              </div>
-            )}
-            {ticketData.seatTypes?.normal?.length > 0 && (
-              <div className="summary-item">
-                <span>Normal Tickets:</span>
-                <span>{ticketData.seatTypes.normal.length} x RM 20</span>
-              </div>
-            )}
+
+            <div className="summary-section">
+              <h6 className="section-title">Ticket Breakdown</h6>
+              {ticketData.seatTypes?.deluxe?.length > 0 && (
+                <div className="summary-item">
+                  <span>Deluxe Tickets:</span>
+                  <span>{ticketData.seatTypes.deluxe.length} × RM 40</span>
+                  <span className="item-total">
+                    RM {ticketData.seatTypes.deluxe.length * 40}
+                  </span>
+                </div>
+              )}
+              {ticketData.seatTypes?.normal?.length > 0 && (
+                <div className="summary-item">
+                  <span>Standard Tickets:</span>
+                  <span>{ticketData.seatTypes.normal.length} × RM 20</span>
+                  <span className="item-total">
+                    RM {ticketData.seatTypes.normal.length * 20}
+                  </span>
+                </div>
+              )}
+            </div>
+
             {ticketData.selectedPackages?.length > 0 && (
-              <div className="summary-item">
-                <span>Packages:</span>
-                <span>{ticketData.selectedPackages.join(", ")}</span>
+              <div className="summary-section">
+                <div className="summary-item">
+                  <span>Packages:</span>
+                  <span>{ticketData.selectedPackages.join(", ")}</span>
+                </div>
               </div>
             )}
+
+            <div className="summary-divider"></div>
+
             <div className="summary-item total">
               <span>
-                <strong>Total Amount: &nbsp;</strong>
+                <strong>Total Amount:</strong>
               </span>
               <span>
                 <strong>RM {ticketData.totalPrice}</strong>
@@ -427,25 +467,24 @@ const Confirmation: React.FC = () => {
               </div>
             </div>
 
-            {/* <div className="terms-notice">
-              <p>
-                <small>
-                  By confirming this booking, you agree to our terms and
-                  conditions. Your booking will be reviewed and confirmed within
-                  24 hours. You will receive an email confirmation once your
-                  payment is verified.
-                </small>
-              </p>
-            </div> */}
-
-            <button
-              type="button"
-              className="confirm-btn"
-              onClick={handleConfirm}
-              disabled={loading}
-            >
-              {loading ? <Spin size="small" /> : "Confirm Booking"}
-            </button>
+            <div className="action-buttons">
+              <button
+                type="button"
+                className="back-btn"
+                onClick={handleBack}
+                disabled={loading}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                className="confirm-btn"
+                onClick={handleConfirm}
+                disabled={loading}
+              >
+                {loading ? <Spin size="small" /> : "Confirm Booking"}
+              </button>
+            </div>
           </form>
         </div>
       </div>
