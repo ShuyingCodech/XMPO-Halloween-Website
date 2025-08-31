@@ -26,7 +26,6 @@
   padding: 1.5rem;
   background-color: #f8f9fa;
   border-radius: 8px;
-  border: 1px solid #dee2e6;
 }
 
 .booking-summary h6 {
@@ -51,11 +50,11 @@
 }
 
 .summary-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
   padding: 0.5rem 0;
-  border-bottom: 1px solid #e9ecef;
+  gap: 1rem;
 }
 
 .summary-item:last-child {
@@ -65,17 +64,21 @@
 .summary-item span:first-child {
   color: #495057;
   font-weight: 500;
+  justify-self: start;
 }
 
 .summary-item span:nth-child(2) {
   color: #6c757d;
   font-size: 0.9rem;
+  justify-self: start; /* This will align left */
+  text-align: left;
 }
 
 .summary-item .item-total {
-  color: #ff8a00;
   font-weight: 600;
   font-size: 0.9rem;
+  justify-self: end;
+  text-align: right;
 }
 
 .summary-divider {
@@ -86,21 +89,18 @@
 }
 
 .summary-item.total {
-  background-color: #fff;
-  border-radius: 6px;
-  padding: 1rem;
   margin-top: 0.5rem;
-  border: 2px solid #ff8a00;
-  font-size: 1.1rem;
+  grid-template-columns: 1fr auto; /* Only 2 columns for total */
 }
 
 .summary-item.total span {
   color: #333;
-  font-size: 1.1rem;
 }
 
 .summary-item.total span:last-child {
   color: #ff8a00;
+  font-weight: bold; /* Make total price bold */
+  font-size: 1.1rem; /* Slightly larger for emphasis */
 }
 
 /* Form Styles */
@@ -257,18 +257,17 @@
   }
 
   .summary-item {
-    flex-direction: column;
-    align-items: flex-start;
+    grid-template-columns: 1fr;
     gap: 0.25rem;
   }
 
   .summary-item span:nth-child(2),
   .summary-item .item-total {
-    align-self: flex-end;
+    justify-self: end;
   }
 
   .summary-item.total {
-    flex-direction: row;
+    grid-template-columns: 1fr auto;
     align-items: center;
   }
 
@@ -328,59 +327,3 @@
   margin-bottom: 2rem;
   color: #333;
 }
-
-.nav-buttons {
-  gap: 0.5rem;
-}
-
-.nav-btn {
-  padding: 0.4rem 0.8rem;
-  font-size: 0.9rem;
-}
-
-.content-container {
-  flex-direction: column;
-  padding: 1rem;
-  gap: 1rem;
-}
-
-.right-section {
-  position: static;
-}
-
-.footer-container {
-  flex-direction: column;
-  text-align: center;
-}
-
-.footer-section {
-  margin-bottom: 1.5rem;
-}
-
-.cart-items {
-  flex-direction: column;
-}
-
-.cart-item {
-  min-width: 100%;
-}
-
-.ticket-types {
-  flex-direction: column;
-}
-
-.seating-chart {
-  padding: 0.5rem;
-}
-
-.seat {
-  width: 18px;
-  height: 18px;
-  font-size: 7px;
-}
-
-.legend {
-  flex-direction: column;
-  gap: 0.5rem;
-}
-

@@ -158,7 +158,6 @@ const Payment: React.FC = () => {
               </div>
               <div className="payment-reminder">
                 <p className="reminder-text">
-                  📸{" "}
                   <strong>
                     Remember to screenshot proof of payment for submission!
                   </strong>
@@ -168,7 +167,7 @@ const Payment: React.FC = () => {
           </div>
 
           <div className="terms-section">
-            <h5>Terms and Conditions</h5>
+            <h6>Terms and Conditions</h6>
             <div className="terms-content">
               <ol>
                 <li>

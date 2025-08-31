@@ -344,7 +344,7 @@ const SeatSelection: React.FC = () => {
     return seats.map((seat, index) => (
       <span key={seat}>
         {seat}
-        {index < seats.length - 1 ? ", " : ""}
+        {index < seats.length - 1 ? ", " : ""} &nbsp;
       </span>
     ));
   };
@@ -424,11 +424,11 @@ const SeatSelection: React.FC = () => {
             <div className="legend">
               <div>
                 <span className="seat deluxe"></span> Deluxe &nbsp; [RM
-                {seatPrices["Deluxe"].earlyBird}]
+                {seatPrices["Deluxe"].original}]
               </div>
               <div>
                 <span className="seat normal"></span> Standard &nbsp; [RM
-                {seatPrices["Standard1"].earlyBird}]
+                {seatPrices["Standard1"].original}]
               </div>
               <div>
                 <span className="seat selected"></span> Selected
@@ -454,11 +454,10 @@ const SeatSelection: React.FC = () => {
           </div>
 
           <div className="right-section">
-            {/* Early Bird Promo at top */}
-            <div className="early-bird-promo">
-              <h5>🎉 Early Bird Promo</h5>
+            {/* <div className="early-bird-promo">
+              <h5>Early Bird Promo</h5>
               <p>Special pricing available now!</p>
-            </div>
+            </div> */}
 
             <div className="seats-selected">
               <h5>Seats Selected</h5>

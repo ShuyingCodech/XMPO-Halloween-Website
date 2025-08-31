@@ -30,9 +30,7 @@
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 1rem;
   padding: 1rem;
-  background-color: #f8f9fa;
   border-radius: 8px 8px 0 0;
-  border: 1px solid #dee2e6;
   font-weight: bold;
   color: #495057;
 }
@@ -42,10 +40,8 @@
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 1rem;
   padding: 1rem;
-  border: 1px solid #dee2e6;
   border-top: none;
   align-items: center;
-  background-color: #fff;
 }
 
 .receipt-item:last-of-type {
@@ -94,19 +90,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 2px solid #ff8a00;
 }
 
 .total-label {
-  font-size: 1.2rem;
   font-weight: bold;
   color: #333;
 }
 
 .total-amount {
-  font-size: 1.5rem;
   font-weight: bold;
   color: #ff8a00;
 }
@@ -120,7 +111,6 @@
   background-color: #f8f9fa;
   padding: 2rem;
   border-radius: 8px;
-  border: 1px solid #dee2e6;
 }
 
 .bank-details h5 {
@@ -170,8 +160,8 @@
   text-align: left;
 }
 
-.terms-section h5 {
-  margin-bottom: 1rem;
+.terms-section h6 {
+  margin-bottom: 0.5rem;
   color: #333;
   text-align: left;
 }
