@@ -86,7 +86,6 @@
   max-width: 100%;
   margin: 0 auto;
   overflow-x: auto;
-  padding: 0 1rem;
 }
 
 .seat-row {
@@ -94,6 +93,7 @@
   align-items: center;
   margin-bottom: 0.3rem;
   justify-content: center;
+  min-width: max-content; /* Prevent row from being squeezed too much */
 }
 
 .row-label {
@@ -102,6 +102,7 @@
   color: #666;
   text-align: right;
   padding-right: 0.8rem;
+  flex-shrink: 0; /* Prevent row labels from shrinking */
 }
 
 .seat-wrapper {
@@ -456,5 +457,29 @@
     min-width: 40px;
     font-size: 0.7rem;
     padding-right: 0.5rem;
+  }
+}
+
+/* When container is too small, align seats to the left instead of center */
+@media (max-width: 800px) {
+  .seat-wrapper {
+    justify-content: flex-start;
+    padding-right: 1rem; /* Add some padding for better visual */
+  }
+}
+
+/* Additional improvements for smaller screens */
+@media (max-width: 600px) {
+  .seating-chart {
+    padding: 0; /* Remove left/right padding on very small screens */
+    overflow-x: auto; /* Ensure horizontal scrolling is available */
+  }
+
+  .content-container {
+    padding: 1rem 0.5rem; /* Reduce container padding */
+  }
+
+  .left-section {
+    padding: 1rem 0.5rem; /* Reduce section padding */
   }
 }
