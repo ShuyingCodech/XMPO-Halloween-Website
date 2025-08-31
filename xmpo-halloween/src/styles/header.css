@@ -7,6 +7,18 @@
   right: 0;
   z-index: 1000;
   padding: 1rem 0;
+  transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+  will-change: transform;
+}
+
+.header-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.header-hidden {
+  transform: translateY(-100%);
+  opacity: 0;
 }
 
 .header-container {
@@ -41,14 +53,14 @@
   background: #46443f;
   border: none;
   color: white;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 2.5rem;
   cursor: pointer;
-  border-radius: 25px;
+  border-radius: 20px;
   transition: all 0.3s ease;
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 300;
   backdrop-filter: blur(10px);
-  box-shadow: 1px 1px 0px #90908d;
+  box-shadow: 2px 2px 0px #90908d;
 }
 
 .nav-btn:hover {
@@ -75,6 +87,6 @@
 
   .nav-btn {
     padding: 0.5rem 1rem;
-    font-size: 0.8rem;
+    font-size: 14px;
   }
 }

@@ -10,6 +10,14 @@ import {
 import { SiXiaohongshu } from "react-icons/si";
 
 const Footer: React.FC = () => {
+  const handleYouTubeClick = () => {
+    window.open("https://www.youtube.com/@xmum_philharmonic", "_blank");
+  };
+
+  const handleEmailClick = () => {
+    window.location.href = "mailto:philharmonicorchestraxmum@gmail.com";
+  };
+
   return (
     <footer className="footer">
       <div className="footer-container">
@@ -32,7 +40,13 @@ const Footer: React.FC = () => {
             <MailOutlined />
           </div>
           <h3>Email</h3>
-          <p>philharmonicorchestraxmum@gmail.com</p>
+          <p
+            onClick={handleEmailClick}
+            style={{ cursor: "pointer" }}
+            title="Click to send email"
+          >
+            philharmonicorchestraxmum@gmail.com
+          </p>
         </div>
 
         <div className="footer-section">
@@ -42,7 +56,11 @@ const Footer: React.FC = () => {
           <h3>Social Media</h3>
           <div className="social-icons">
             <InstagramOutlined />
-            <YoutubeFilled />
+            <YoutubeFilled
+              onClick={handleYouTubeClick}
+              style={{ cursor: "pointer" }}
+              title="Visit our YouTube channel"
+            />
             {React.createElement(SiXiaohongshu as any, {
               style: { fontSize: "1.5rem" },
             })}
