@@ -81,7 +81,7 @@ const Header: React.FC = () => {
                 "https://xmposite.wixsite.com/xmumphilharmonic/tickets")
             }
           >
-            Buy Tickets
+            Halloween Concert
           </button>
         </div>
       </div>

@@ -171,12 +171,26 @@ const SeatSelection: React.FC = () => {
       // Get all occupied seats in this row (both selected and reserved)
       const occupiedSeats = new Set<number>();
 
-      // Add reserved seats in this row
+      // Add reserved seats in this row (including Row 1 VIP seats)
       reservedSeats.forEach((seat) => {
         if (getRowNumber(seat) === targetRow) {
           occupiedSeats.add(getSeatNumber(seat));
         }
       });
+
+      // Mark all Row 1 seats as occupied
+      if (targetRow === 1) {
+        for (let seat = 1; seat <= rowSeatCount; seat++) {
+          occupiedSeats.add(seat);
+        }
+      }
+
+      // Add disabled seats (rows 12 and 13, seats 1-3)
+      if (targetRow === 12 || targetRow === 13) {
+        for (let seat = 1; seat <= 3; seat++) {
+          occupiedSeats.add(seat);
+        }
+      }
 
       // Add currently selected seats in this row
       selectedSeats.forEach((seat) => {
@@ -298,6 +312,29 @@ const SeatSelection: React.FC = () => {
     sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
   };
 
+  const handleClearSelection = () => {
+    setSelectedSeats([]);
+    setTotalPrice(0);
+    setSelectedPackages([]);
+
+    const ticketData = {
+      selectedSeats: [],
+      totalPrice: 0,
+      selectedPackages: [],
+    };
+    sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
+
+    notification.info({
+      message: "Seats Cleared",
+      description: "All selected seats have been cleared.",
+      duration: 2,
+    });
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleContinueToPayment = () => {
     if (selectedSeats.length === 0) {
       notification.error({
@@ -328,6 +365,7 @@ const SeatSelection: React.FC = () => {
 
     // If validation passes, proceed to payment
     navigate("/payment");
+    setTimeout(scrollToTop, 100);
   };
 
   const generateSeatNumbers = (rowCount: number) => {
@@ -352,7 +390,7 @@ const SeatSelection: React.FC = () => {
   const renderSeats = () => {
     const seatRows: React.ReactElement[] = [];
 
-    const generateSeatRow = (row: number, isFirstOrLastRow: boolean) => {
+    const generateSeatRow = (row: number, isLastRow: boolean) => {
       const zone = Object.keys(zones).find(
         (key) =>
           row >= zones[key as keyof typeof zones].startRow &&
@@ -368,7 +406,8 @@ const SeatSelection: React.FC = () => {
           seatNum < 10 ? `0${seatNum}` : seatNum
         }`;
         const isSelected = selectedSeats.includes(seatCode);
-        const isReserved = reservedSeats.includes(seatCode) || isFirstOrLastRow;
+        const isReserved =
+          reservedSeats.includes(seatCode) || row === 1 || isLastRow; // Mark row 1 as reserved (VIP)
         const isDisabled =
           (row === 12 || row === 13) && seatNum >= 1 && seatNum <= 3;
 
@@ -388,7 +427,7 @@ const SeatSelection: React.FC = () => {
             }
             style={isReserved || isDisabled ? { cursor: "not-allowed" } : {}}
           >
-            {!isFirstOrLastRow && seatNum}
+            {!isLastRow && seatNum}
           </div>
         );
       });
@@ -401,7 +440,7 @@ const SeatSelection: React.FC = () => {
       );
     };
 
-    generateSeatRow(1, false); // VIP row - not reserved anymore
+    generateSeatRow(1, false); // VIP row - now reserved
     for (let row = 2; row <= 17; row++) {
       generateSeatRow(row, false);
     }
@@ -420,8 +459,11 @@ const SeatSelection: React.FC = () => {
           <div className="left-section">
             <h4>Select Seats</h4>
 
-            {/* Legend moved above seats */}
+            {/* Legend with KEY header */}
             <div className="legend">
+              <div className="legend-header">
+                <strong>KEY</strong>
+              </div>
               <div>
                 <span className="seat deluxe"></span> Deluxe &nbsp; [RM
                 {seatPrices["Deluxe"].original}]
@@ -438,29 +480,28 @@ const SeatSelection: React.FC = () => {
               </div>
             </div>
 
+            {/* Scroll hint moved here */}
+            <span className="swipe-hint">
+              <DoubleRightOutlined />
+              &nbsp; Scroll left to view more seats
+            </span>
+
             <div className="stage">STAGE</div>
 
             {loading ? (
               <div>Loading...</div>
             ) : (
-              <>
-                <div className="seating-chart">{renderSeats()}</div>
-                <span className="swipe-hint">
-                  <DoubleRightOutlined />
-                  &nbsp; Swipe left for more
-                </span>
-              </>
+              <div className="seating-chart">{renderSeats()}</div>
             )}
           </div>
 
           <div className="right-section">
-            {/* <div className="early-bird-promo">
-              <h5>Early Bird Promo</h5>
-              <p>Special pricing available now!</p>
-            </div> */}
-
             <div className="seats-selected">
               <h5>Seats Selected</h5>
+
+              <div className="early-bird-promo">
+                <h6>Early Bird Promotion</h6>
+              </div>
 
               {deluxeSeats.length > 0 && (
                 <div className="ticket-type-display">
@@ -512,36 +553,6 @@ const SeatSelection: React.FC = () => {
                 </div>
               )}
             </div>
-
-            {/* <div className="bundles-section">
-              <h3>Bundles</h3>
-
-              <div className="bundle-item">
-                <input
-                  type="checkbox"
-                  id="ticket-only"
-                  checked={selectedPackages.length === 0}
-                  onChange={() => setSelectedPackages([])}
-                />
-                <label htmlFor="ticket-only">Ticket only</label>
-              </div>
-
-              {packages.map((pkg) => (
-                <div
-                  key={pkg.id}
-                  className={`bundle-item ${!pkg.available ? "disabled" : ""}`}
-                >
-                  <input
-                    type="checkbox"
-                    id={pkg.id}
-                    checked={selectedPackages.includes(pkg.id)}
-                    onChange={() => handlePackageToggle(pkg.id)}
-                    disabled={!pkg.available}
-                  />
-                  <label htmlFor={pkg.id}>{pkg.name} ( details... )</label>
-                </div>
-              ))}
-            </div> */}
 
             <div className="total-price">
               <h6>Total: RM {totalPrice}</h6>

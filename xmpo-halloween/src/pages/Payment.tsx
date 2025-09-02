@@ -79,8 +79,13 @@ const Payment: React.FC = () => {
     }
   }, []);
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleBack = () => {
     navigate("/seat-selection");
+    setTimeout(scrollToTop, 100);
   };
 
   const handleContinue = () => {
@@ -89,6 +94,7 @@ const Payment: React.FC = () => {
       return;
     }
     navigate("/confirmation");
+    setTimeout(scrollToTop, 100);
   };
 
   return (
@@ -142,8 +148,10 @@ const Payment: React.FC = () => {
                   <strong>Bank:</strong> Maybank
                 </p>
                 <p>
-                  <strong>Account Name:</strong> Philharmonic Orchestra Society
-                  of XMUM
+                  <strong>Account Name:</strong>{" "}
+                  <span className="highlight">
+                    Philharmonic Orchestra Society of XMUM
+                  </span>
                 </p>
                 <p>
                   <strong>Account Number:</strong> 562432548392

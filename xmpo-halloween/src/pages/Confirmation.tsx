@@ -67,6 +67,7 @@ const Confirmation: React.FC = () => {
         duration: 3,
       });
       navigate("/seat-selection");
+      setTimeout(scrollToTop, 100);
       return;
     }
 
@@ -98,6 +99,7 @@ const Confirmation: React.FC = () => {
         duration: 3,
       });
       navigate("/seat-selection");
+      setTimeout(scrollToTop, 100);
     }
   }, [navigate]);
 
@@ -186,8 +188,13 @@ const Confirmation: React.FC = () => {
     return true;
   };
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleBack = () => {
     navigate("/payment");
+    setTimeout(scrollToTop, 100);
   };
 
   const handleConfirm = async () => {
@@ -210,6 +217,7 @@ const Confirmation: React.FC = () => {
           duration: 5,
         });
         navigate("/seat-selection");
+        setTimeout(scrollToTop, 100);
         return;
       }
 
@@ -250,6 +258,7 @@ const Confirmation: React.FC = () => {
           bookingId: result.bookingId,
         },
       });
+      setTimeout(scrollToTop, 100);
     } catch (error) {
       console.error("Error creating booking:", error);
 
@@ -260,6 +269,7 @@ const Confirmation: React.FC = () => {
           errorMessage =
             "One or more selected seats are no longer available. Please select different seats.";
           navigate("/seat-selection");
+          setTimeout(scrollToTop, 100);
         } else if (error.message.includes("upload")) {
           errorMessage = "Failed to upload payment receipt. Please try again.";
         } else {

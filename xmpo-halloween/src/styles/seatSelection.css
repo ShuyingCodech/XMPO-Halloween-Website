@@ -1,6 +1,6 @@
 .seat-selection-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #050500;
   padding-top: 133px; /* Account for fixed header */
 }
 
@@ -32,29 +32,7 @@
   min-width: 280px;
 }
 
-/* Early Bird Promo Styles */
-.early-bird-promo {
-  background: linear-gradient(135deg, #ff8a00, #ffa500);
-  color: white;
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.early-bird-promo h5 {
-  margin: 0 0 0.5rem 0;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-
-.early-bird-promo p {
-  margin: 0;
-  font-size: 0.9rem;
-  opacity: 0.9;
-}
-
-/* Legend moved above seats */
+/* Legend with KEY header in one row */
 .legend {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -66,7 +44,14 @@
   border: 1px solid #e9ecef;
 }
 
-.legend > div {
+.legend-header {
+  grid-column: 1 / -1; /* Span entire row */
+  text-align: center;
+  margin-bottom: 0.5rem;
+  color: #495057;
+}
+
+.legend > div:not(.legend-header) {
   display: flex;
   align-items: center;
   font-size: 0.85rem;
@@ -140,10 +125,10 @@
   border-color: #ff8a00;
 }
 
-/* Updated deluxe seat color to light blue */
+/* Updated deluxe seat color to pastel yellow */
 .seat.deluxe {
-  background-color: #add8e6;
-  border-color: #87ceeb;
+  background-color: #ffee8c;
+  border-color: #ffe135;
 }
 
 .seat.normal {
@@ -155,9 +140,11 @@
   background-color: #abb6c3;
   cursor: not-allowed;
 }
+
+/* Updated selected seat color to pastel green */
 .seat.selected {
-  background-color: #ffc107;
-  border-color: #ffc107;
+  background-color: #80ef80;
+  border-color: #5ce65c;
   font-weight: bold;
 }
 
@@ -193,9 +180,27 @@
 }
 
 .seats-selected h5 {
-  margin-bottom: 1rem;
   color: #333;
   font-size: 1rem;
+}
+
+.early-bird-promo {
+  color: #ff8a00;
+  padding-bottom: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.early-bird-promo h6 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.early-bird-promo p {
+  margin: 0;
+  font-size: 0.85rem;
+  opacity: 0.9;
 }
 
 .ticket-types {
@@ -423,12 +428,17 @@
     margin-bottom: 1rem;
   }
 
-  .early-bird-promo h5 {
-    font-size: 1rem;
+  .early-bird-promo h6 {
+    font-size: 0.9rem;
   }
 
   .early-bird-promo p {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
+  }
+
+  /* Center alignment for mobile screens */
+  .seat-wrapper {
+    justify-content: center;
   }
 }
 
@@ -458,12 +468,17 @@
     font-size: 0.7rem;
     padding-right: 0.5rem;
   }
+
+  /* Keep center alignment for very small screens */
+  .seat-wrapper {
+    justify-content: center;
+  }
 }
 
-/* When container is too small, align seats to the left instead of center */
+/* Center alignment for smaller screens instead of left alignment */
 @media (max-width: 800px) {
   .seat-wrapper {
-    justify-content: flex-start;
+    justify-content: center;
     padding-right: 1rem; /* Add some padding for better visual */
   }
 }
@@ -481,5 +496,10 @@
 
   .left-section {
     padding: 1rem 0.5rem; /* Reduce section padding */
+  }
+
+  /* Center alignment for mobile */
+  .seat-wrapper {
+    justify-content: center;
   }
 }
