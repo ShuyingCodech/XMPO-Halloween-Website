@@ -14,22 +14,30 @@
 
 .left-section {
   flex: 2.5;
-  background: white;
+  background: #1a1a1a; /* Dark background */
+  color: #e0e0e0; /* Light text */
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
 }
 
 .right-section {
   flex: 1;
-  background: white;
+  background: #1a1a1a; /* Dark background */
+  color: #e0e0e0; /* Light text */
   padding: 1.5rem;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
   height: fit-content;
   position: sticky;
   top: 100px;
   min-width: 280px;
+}
+
+.left-section h4,
+.right-section h5,
+.right-section h6 {
+  color: #e0e0e0;
 }
 
 /* Legend with KEY header in one row */
@@ -39,23 +47,23 @@
   gap: 1rem;
   margin: 1rem 0 2rem 0;
   padding: 1rem;
-  background-color: #f8f9fa;
+  background-color: #2a2a2a; /* Dark legend background */
   border-radius: 6px;
-  border: 1px solid #e9ecef;
+  border: 1px solid #444;
 }
 
 .legend-header {
   grid-column: 1 / -1; /* Span entire row */
   text-align: center;
   margin-bottom: 0.5rem;
-  color: #495057;
+  color: #e0e0e0; /* Light text */
 }
 
 .legend > div:not(.legend-header) {
   display: flex;
   align-items: center;
   font-size: 0.85rem;
-  color: #495057;
+  color: #c0c0c0; /* Slightly muted light text */
 }
 
 .stage {
@@ -84,7 +92,7 @@
 .row-label {
   min-width: 50px;
   font-size: 0.75rem;
-  color: #666;
+  color: #888; /* Darker gray for dark mode */
   text-align: right;
   padding-right: 0.8rem;
   flex-shrink: 0; /* Prevent row labels from shrinking */
@@ -101,7 +109,7 @@
 .seat {
   width: 18px;
   height: 18px;
-  border: 1px solid #ccc;
+  border: 1px solid #555; /* Darker border */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -110,46 +118,54 @@
   border-radius: 2px;
   margin-right: 3px;
   transition: all 0.2s ease;
+  color: #333; /* Dark text for seat numbers */
 }
 
 .seat.red {
-  background-color: #ffebee;
-  border-color: #f44336;
+  background-color: #4a2c2c;
+  border-color: #8b3a3a;
 }
 .seat.blue {
-  background-color: #e3f2fd;
-  border-color: #2196f3;
+  background-color: #2c3a4a;
+  border-color: #3a5a8b;
 }
 .seat.green {
-  background-color: #e8f5e8;
+  background-color: #2c4a2c;
   border-color: #ff8a00;
 }
 
-/* Updated deluxe seat color to pastel yellow */
+/* Updated deluxe seat color for dark mode */
 .seat.deluxe {
-  background-color: #ffee8c;
-  border-color: #ffe135;
+  background-color: #5a5a2c; /* Darker yellow */
+  border-color: #8a8a3a;
+  color: #fff; /* White text for better contrast */
 }
 
 .seat.normal {
-  background-color: #f5f5f5;
-  border-color: #ccc;
+  background-color: #b18e7f9b;
+  border-color: #d2b1a3a2;
+  color: #FFF;
 }
 
 .seat.reserved {
-  background-color: #abb6c3;
+  background-color: #4a4a4a; /* Darker reserved color */
+  border-color: #666;
+  color: #fff;
   cursor: not-allowed;
 }
 
-/* Updated selected seat color to pastel green */
+/* Updated selected seat color for dark mode */
 .seat.selected {
-  background-color: #80ef80;
-  border-color: #5ce65c;
+  background-color: #2d5a2d; /* Darker green */
+  border-color: #4a8a4a;
   font-weight: bold;
+  color: #fff; /* White text for selected seats */
+  box-shadow: 0 0 8px rgba(74, 138, 74, 0.5);
 }
 
 .seat:hover:not(.reserved) {
   transform: scale(1.1);
+  box-shadow: 0 0 5px rgba(255, 138, 0, 0.3);
 }
 
 .swipe-hint {
@@ -157,21 +173,21 @@
   align-items: center;
   justify-content: center;
   margin: 1rem 0;
-  color: #666;
+  color: #888; /* Darker gray */
   font-size: 0.9rem;
 }
 
 .validation-note {
-  background-color: #e3f2fd;
+  background-color: #2a3a4a; /* Dark blue background */
   padding: 1rem;
   border-radius: 4px;
-  border-left: 4px solid #2196f3;
+  border-left: 4px solid #4a8aff;
   margin-top: 2rem;
 }
 
 .validation-note p {
   margin: 0;
-  color: #1976d2;
+  color: #8abaff; /* Light blue text */
 }
 
 /* Right Section Styles */
@@ -180,7 +196,7 @@
 }
 
 .seats-selected h5 {
-  color: #333;
+  color: #e0e0e0; /* Light text */
   font-size: 1rem;
 }
 
@@ -195,6 +211,7 @@
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
   font-weight: 600;
+  color: #ff8a00;
 }
 
 .early-bird-promo p {
@@ -212,7 +229,9 @@
 .ticket-type {
   flex: 1;
   padding: 1rem;
-  border: 2px solid #e0e0e0;
+  border: 2px solid #444; /* Dark border */
+  background-color: #2a2a2a; /* Dark background */
+  color: #e0e0e0; /* Light text */
   border-radius: 8px;
   cursor: pointer;
   text-align: center;
@@ -224,19 +243,21 @@
 
 .ticket-type.active {
   border-color: #ff8a00;
-  background-color: #e8f5e8;
+  background-color: #2d4a2d; /* Dark green background */
 }
 
 .ticket-type:hover {
   border-color: #ff8a00;
+  background-color: #333;
 }
 
 /* Updated grid layout for ticket type display */
 .ticket-type-display {
   margin-bottom: 1rem;
-  border: 1px solid #e9ecef;
+  border: 1px solid #444; /* Dark border */
   border-radius: 6px;
   overflow: hidden;
+  background-color: #2a2a2a;
 }
 
 .ticket-type-header {
@@ -245,32 +266,37 @@
   gap: 0.8rem;
   align-items: center;
   padding: 0.6rem;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  background-color: #333; /* Darker header background */
+  border-bottom: 1px solid #444;
 }
 
 .ticket-type-label {
   font-weight: 600;
   font-size: 0.8rem;
-  color: #495057;
+  color: #e0e0e0; /* Light text */
 }
 
 .selected-seats-display {
-  background-color: #ffffff;
+  background-color: #2a2a2a; /* Dark background */
+  color: #c0c0c0; /* Light gray text */
   padding: 0.4rem;
   border-radius: 4px;
   font-size: 0.75rem;
-  color: #6c757d;
   min-height: 16px;
   display: flex;
   align-items: center;
   line-height: 1.3;
 }
 
+.selected-seats-display p {
+  color: #888; /* Darker gray for "No seats selected" */
+  margin: 0;
+}
+
 /* Price display section */
 .price-display {
   padding: 0.6rem;
-  background-color: #ffffff;
+  background-color: #2a2a2a; /* Dark background */
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -278,7 +304,7 @@
 }
 
 .original-price {
-  color: #6c757d;
+  color: #888; /* Darker gray for strikethrough price */
   text-decoration: line-through;
   font-size: 0.75rem;
 }
@@ -289,7 +315,7 @@
 }
 
 .quantity {
-  color: #495057;
+  color: #c0c0c0; /* Light gray */
   margin-left: auto;
 }
 
@@ -304,7 +330,7 @@
 
 .bundles-section h3 {
   margin-bottom: 1rem;
-  color: #333;
+  color: #e0e0e0; /* Light text */
   font-size: 1rem;
 }
 
@@ -319,7 +345,7 @@
 }
 
 .bundle-item:hover:not(.disabled) {
-  background-color: #f5f5f5;
+  background-color: #333; /* Dark hover background */
 }
 
 .bundle-item.disabled {
@@ -329,12 +355,14 @@
 
 .bundle-item input[type="checkbox"] {
   margin: 0;
+  accent-color: #ff8a00; /* Orange checkboxes */
 }
 
 .bundle-item label {
   cursor: pointer;
   flex: 1;
   font-size: 0.9rem;
+  color: #e0e0e0; /* Light text */
 }
 
 .bundle-item.disabled label {
@@ -344,7 +372,7 @@
 .total-price {
   margin-bottom: 1rem;
   padding: 0.8rem;
-  background-color: #f8f9fa;
+  background-color: #333; /* Dark background */
   border-radius: 6px;
   text-align: center;
 }
@@ -353,7 +381,7 @@
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #495057;
+  color: #e0e0e0; /* Light text */
 }
 
 .continue-payment-btn {
@@ -367,15 +395,19 @@
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  box-shadow: 0 2px 10px rgba(255, 138, 0, 0.3);
 }
 
 .continue-payment-btn:hover:not(:disabled) {
   background-color: #e57a00;
+  box-shadow: 0 4px 15px rgba(255, 138, 0, 0.4);
 }
 
 .continue-payment-btn:disabled {
-  background-color: #cccccc;
+  background-color: #555; /* Darker disabled color */
+  color: #888;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 @media (max-width: 1200px) {
@@ -502,4 +534,28 @@
   .seat-wrapper {
     justify-content: center;
   }
+}
+
+/* Additional dark mode enhancements */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #555 #2a2a2a;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #2a2a2a;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: #555;
+  border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: #666;
 }

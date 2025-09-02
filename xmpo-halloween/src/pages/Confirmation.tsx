@@ -252,13 +252,8 @@ const Confirmation: React.FC = () => {
       sessionStorage.removeItem("ticketData");
 
       // Navigate to success page or home
-      navigate("/", {
-        state: {
-          bookingSuccess: true,
-          bookingId: result.bookingId,
-        },
-      });
-      setTimeout(scrollToTop, 100);
+      window.location.href = "https://xmposite.wixsite.com/xmumphilharmonic";
+      setTimeout(scrollToTop, 600);
     } catch (error) {
       console.error("Error creating booking:", error);
 

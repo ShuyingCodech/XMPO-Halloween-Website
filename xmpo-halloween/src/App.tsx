@@ -5,6 +5,7 @@ import SeatSelection from "./pages/SeatSelection";
 import Payment from "./pages/Payment";
 import Confirmation from "./pages/Confirmation";
 import Home from "./pages/Home";
+import Admin from "./pages/Admin";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route path="/seat-selection" element={<SeatSelection />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/confirmation" element={<Confirmation />} />
+          <Route path="/admin" element={<Admin />} />
         </Routes>
       </div>
     </Router>

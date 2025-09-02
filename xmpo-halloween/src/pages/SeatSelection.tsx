@@ -465,18 +465,34 @@ const SeatSelection: React.FC = () => {
                 <strong>KEY</strong>
               </div>
               <div>
-                <span className="seat deluxe"></span> Deluxe &nbsp; [RM
+                <span
+                  className="seat deluxe"
+                  style={{ marginRight: "8px" }}
+                ></span>{" "}
+                Deluxe &nbsp; [RM
                 {seatPrices["Deluxe"].original}]
               </div>
               <div>
-                <span className="seat normal"></span> Standard &nbsp; [RM
+                <span
+                  className="seat normal"
+                  style={{ marginRight: "8px" }}
+                ></span>{" "}
+                Standard &nbsp; [RM
                 {seatPrices["Standard1"].original}]
               </div>
               <div>
-                <span className="seat selected"></span> Selected
+                <span
+                  className="seat selected"
+                  style={{ marginRight: "8px" }}
+                ></span>{" "}
+                Selected
               </div>
               <div>
-                <span className="seat reserved"></span> Sold
+                <span
+                  className="seat reserved"
+                  style={{ marginRight: "8px" }}
+                ></span>{" "}
+                Sold
               </div>
             </div>
 
