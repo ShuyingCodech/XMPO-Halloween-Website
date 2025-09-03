@@ -1,5 +1,5 @@
 .success-page {
-  min-height: 100vh;
+  /* min-height: 100vh; */
   background-color: #050500;
   padding-top: 133px; /* Account for fixed header */
   padding-bottom: 2rem;

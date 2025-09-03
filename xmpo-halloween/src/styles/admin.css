@@ -19,6 +19,9 @@
   border-top: 4px solid #ff8a00;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
@@ -101,6 +104,14 @@
   opacity: 0.6;
   cursor: not-allowed;
   background: #555;
+}
+
+/* Pagination Info */
+.pagination-info {
+  margin-bottom: 15px;
+  color: #c0c0c0;
+  font-size: 14px;
+  text-align: right;
 }
 
 .bookings-table-container {
@@ -258,6 +269,78 @@
   font-style: italic;
 }
 
+/* Pagination Styles */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  gap: 8px;
+  background: #1a1a1a;
+  border-top: 1px solid #444;
+}
+
+.pagination-btn {
+  padding: 8px 16px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #3a3a3a;
+  border-color: #ff8a00;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #1a1a1a;
+}
+
+.pagination-numbers {
+  display: flex;
+  gap: 4px;
+  margin: 0 10px;
+}
+
+.pagination-number {
+  padding: 8px 12px;
+  background: #2a2a2a;
+  color: #e0e0e0;
+  border: 1px solid #444;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  min-width: 40px;
+}
+
+.pagination-number:hover {
+  background: #3a3a3a;
+  border-color: #ff8a00;
+}
+
+.pagination-number.active {
+  background: #ff8a00;
+  color: white;
+  border-color: #ff8a00;
+}
+
+.pagination-ellipsis {
+  display: flex;
+  align-items: center;
+  padding: 8px 4px;
+  color: #888;
+  font-weight: bold;
+}
+
 /* Ant Design Checkbox Customization */
 .ant-checkbox-wrapper {
   color: #e0e0e0 !important;
@@ -312,6 +395,28 @@
   .customer-info,
   .seat-info {
     min-width: 150px;
+  }
+
+  .pagination-info {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+
+  .pagination-container {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 15px;
+  }
+
+  .pagination-btn,
+  .pagination-number {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-width: 35px;
+  }
+
+  .pagination-numbers {
+    margin: 0 5px;
   }
 }
 

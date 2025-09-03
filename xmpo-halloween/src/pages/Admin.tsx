@@ -25,7 +25,7 @@ interface BookingDetails {
   selectedPackages: string[];
   receiptUrl: string;
   createdAt: any;
-  redeemed: boolean; // Added redeemed field
+  redeemed: boolean;
 }
 
 const Admin: React.FC = () => {
@@ -36,6 +36,10 @@ const Admin: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [loading, setLoading] = useState(true);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
 
   useEffect(() => {
     loadBookings();
@@ -52,7 +56,7 @@ const Admin: React.FC = () => {
         bookingsData.push({
           id: doc.id,
           ...data,
-          redeemed: data.redeemed || false, // Initialize redeemed if not exists
+          redeemed: data.redeemed || false,
         } as BookingDetails);
       });
 
@@ -94,6 +98,8 @@ const Admin: React.FC = () => {
     });
 
     setFilteredBookings(filtered);
+    // Reset to first page when filtering/sorting changes
+    setCurrentPage(1);
   }, [bookings, searchTerm, sortBy]);
 
   const handleDeleteBooking = async (bookingId: string) => {
@@ -152,6 +158,58 @@ const Admin: React.FC = () => {
     );
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentBookings = filteredBookings.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const generatePageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages if total pages is less than or equal to max visible
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show pages with ellipsis logic
+      const halfVisible = Math.floor(maxVisiblePages / 2);
+
+      if (currentPage <= halfVisible + 1) {
+        // Show first pages
+        for (let i = 1; i <= maxVisiblePages - 1; i++) {
+          pages.push(i);
+        }
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - halfVisible) {
+        // Show last pages
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - (maxVisiblePages - 2); i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        // Show middle pages
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   if (loading) {
     return (
       <div className="admin-container">
@@ -204,108 +262,159 @@ const Admin: React.FC = () => {
         </div>
       </div>
 
+      {/* Pagination Info */}
+      <div className="pagination-info">
+        <p>
+          Showing {currentBookings.length > 0 ? startIndex + 1 : 0} to{" "}
+          {Math.min(endIndex, filteredBookings.length)} of{" "}
+          {filteredBookings.length} entries
+        </p>
+      </div>
+
       <div className="bookings-table-container">
         {filteredBookings.length === 0 ? (
           <div className="no-bookings">
             <p>No bookings found.</p>
           </div>
         ) : (
-          <table className="bookings-table">
-            <thead>
-              <tr>
-                <th>Customer Details</th>
-                <th>Seats & Pricing</th>
-                <th>Packages</th>
-                <th>Total Amount</th>
-                <th>Receipt</th>
-                <th>Booking Time</th>
-                <th>Redeemed</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBookings.map((booking) => (
-                <tr key={booking.id}>
-                  <td>
-                    <div className="customer-info">
-                      <strong>{booking.name}</strong>
-                      {booking.studentId && (
-                        <div className="student-id">
-                          Student ID: {booking.studentId}
-                        </div>
-                      )}
-                      <div className="contact-details">
-                        <div>{booking.email}</div>
-                        <div className="phone">{booking.contactNo}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div className="seat-info">
-                      <div className="seats-list">
-                        <strong>Seats:</strong>{" "}
-                        {booking.selectedSeats.join(", ")}
-                      </div>
-                      {booking.seatTypes?.deluxe?.length > 0 && (
-                        <div className="seat-type">
-                          Deluxe: {booking.seatTypes.deluxe.length} × RM 40
-                        </div>
-                      )}
-                      {booking.seatTypes?.normal?.length > 0 && (
-                        <div className="seat-type">
-                          Standard: {booking.seatTypes.normal.length} × RM 20
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td>
-                    <div className="packages">
-                      {booking.selectedPackages?.length > 0
-                        ? booking.selectedPackages.join(", ")
-                        : "None"}
-                    </div>
-                  </td>
-                  <td className="amount">
-                    {formatCurrency(booking.totalPrice)}
-                  </td>
-                  <td>
-                    {booking.receiptUrl ? (
-                      <a
-                        href={booking.receiptUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="receipt-link"
-                      >
-                        View Receipt
-                      </a>
-                    ) : (
-                      <span className="no-receipt">No receipt</span>
-                    )}
-                  </td>
-                  <td className="booking-time">
-                    {formatDate(booking.createdAt)}
-                  </td>
-                  <td>
-                    <Checkbox
-                      checked={booking.redeemed}
-                      onChange={(e) =>
-                        handleRedeemChange(booking.id, e.target.checked)
-                      }
-                    />
-                  </td>
-                  <td>
-                    <button
-                      onClick={() => handleDeleteBooking(booking.id)}
-                      className="delete-btn"
-                      title="Delete booking"
-                    >
-                      Delete
-                    </button>
-                  </td>
+          <>
+            <table className="bookings-table">
+              <thead>
+                <tr>
+                  <th>Customer Details</th>
+                  <th>Seats & Pricing</th>
+                  <th>Packages</th>
+                  <th>Total Amount</th>
+                  <th>Receipt</th>
+                  <th>Booking Time</th>
+                  <th>Redeemed</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {currentBookings.map((booking) => (
+                  <tr key={booking.id}>
+                    <td>
+                      <div className="customer-info">
+                        <strong>{booking.name}</strong>
+                        {booking.studentId && (
+                          <div className="student-id">
+                            Student ID: {booking.studentId}
+                          </div>
+                        )}
+                        <div className="contact-details">
+                          <div>{booking.email}</div>
+                          <div className="phone">{booking.contactNo}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="seat-info">
+                        <div className="seats-list">
+                          <strong>Seats:</strong>{" "}
+                          {booking.selectedSeats.join(", ")}
+                        </div>
+                        {booking.seatTypes?.deluxe?.length > 0 && (
+                          <div className="seat-type">
+                            Deluxe: {booking.seatTypes.deluxe.length} × RM 40
+                          </div>
+                        )}
+                        {booking.seatTypes?.normal?.length > 0 && (
+                          <div className="seat-type">
+                            Standard: {booking.seatTypes.normal.length} × RM 20
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="packages">
+                        {booking.selectedPackages?.length > 0
+                          ? booking.selectedPackages.join(", ")
+                          : "None"}
+                      </div>
+                    </td>
+                    <td className="amount">
+                      {formatCurrency(booking.totalPrice)}
+                    </td>
+                    <td>
+                      {booking.receiptUrl ? (
+                        <a
+                          href={booking.receiptUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="receipt-link"
+                        >
+                          View Receipt
+                        </a>
+                      ) : (
+                        <span className="no-receipt">No receipt</span>
+                      )}
+                    </td>
+                    <td className="booking-time">
+                      {formatDate(booking.createdAt)}
+                    </td>
+                    <td>
+                      <Checkbox
+                        checked={booking.redeemed}
+                        onChange={(e) =>
+                          handleRedeemChange(booking.id, e.target.checked)
+                        }
+                      />
+                    </td>
+                    <td>
+                      <button
+                        onClick={() => handleDeleteBooking(booking.id)}
+                        className="delete-btn"
+                        title="Delete booking"
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="pagination-container">
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Previous
+                </button>
+
+                <div className="pagination-numbers">
+                  {generatePageNumbers().map((page, index) => (
+                    <React.Fragment key={index}>
+                      {page === "..." ? (
+                        <span className="pagination-ellipsis">...</span>
+                      ) : (
+                        <button
+                          className={`pagination-number ${
+                            currentPage === page ? "active" : ""
+                          }`}
+                          onClick={() => handlePageChange(page as number)}
+                        >
+                          {page}
+                        </button>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
+
+                <button
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
