@@ -78,7 +78,7 @@ const Header: React.FC = () => {
             className="nav-btn"
             onClick={() =>
               (window.location.href =
-                "https://xmposite.wixsite.com/xmumphilharmonic/tickets")
+                "https://xmposite.wixsite.com/xmumphilharmonic/halloween-concert")
             }
           >
             Halloween Concert

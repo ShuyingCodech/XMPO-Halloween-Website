@@ -251,9 +251,9 @@ const Confirmation: React.FC = () => {
       // Clear session storage
       sessionStorage.removeItem("ticketData");
 
-      // Navigate to success page or home
-      window.location.href = "https://xmposite.wixsite.com/xmumphilharmonic";
-      setTimeout(scrollToTop, 600);
+      // Navigate to success page 
+      navigate("/success");
+      setTimeout(scrollToTop, 100);
     } catch (error) {
       console.error("Error creating booking:", error);
 
@@ -404,6 +404,7 @@ const Confirmation: React.FC = () => {
                 type="tel"
                 id="contactNo"
                 name="contactNo"
+                placeholder=" * 012-3456789"
                 value={formData.contactNo}
                 onChange={handleInputChange}
                 required

@@ -90,6 +90,9 @@
 }
 
 .row-label {
+  position: sticky;
+  left: 0;
+  background-color: #1a1a1a; /* Match left section background */
   min-width: 50px;
   font-size: 0.75rem;
   color: #888; /* Darker gray for dark mode */
@@ -144,7 +147,7 @@
 .seat.normal {
   background-color: #b18e7f9b;
   border-color: #d2b1a3a2;
-  color: #FFF;
+  color: #fff;
 }
 
 .seat.reserved {
