@@ -10,12 +10,26 @@ import {
 import { SiXiaohongshu } from "react-icons/si";
 
 const Footer: React.FC = () => {
+  const handleInstagramClick = () => {
+    window.open(
+      "https://www.instagram.com/xmum_philharmonic/?igsh=MWl6ZHNwd3d1NnFsZQ%3D%3D#",
+      "_blank"
+    );
+  };
+
   const handleYouTubeClick = () => {
     window.open("https://www.youtube.com/@xmum_philharmonic", "_blank");
   };
 
   const handleEmailClick = () => {
     window.location.href = "mailto:philharmonicorchestraxmum@gmail.com";
+  };
+
+  const handleXiaohongshuClick = () => {
+    window.open(
+      "https://www.xiaohongshu.com/user/profile/610e95240000000001000c5c?xsec_token=YBljYU4VfoI6udlk_WcSJWvulA6DrXNHzFwvxWdPjirOo%3D&xsec_source=app_share&xhsshare=CopyLink&appuid=64b6acd9000000000a020c41&apptime=1756312729&share_id=025da96c8fd04fbbbd32641de59538c7&share_channel=copy_link",
+      "_blank"
+    );
   };
 
   return (
@@ -55,14 +69,19 @@ const Footer: React.FC = () => {
           </div>
           <h3>Social Media</h3>
           <div className="social-icons">
-            <InstagramOutlined />
+            <InstagramOutlined
+              onClick={handleInstagramClick}
+              style={{ cursor: "pointer" }}
+            />
             <YoutubeFilled
               onClick={handleYouTubeClick}
               style={{ cursor: "pointer" }}
               title="Visit our YouTube channel"
             />
             {React.createElement(SiXiaohongshu as any, {
-              style: { fontSize: "1.5rem" },
+              style: { fontSize: "1.5rem", cursor: "pointer" },
+              onClick: handleXiaohongshuClick,
+              title: "Visit our Xiaohongshu profile",
             })}
           </div>
         </div>

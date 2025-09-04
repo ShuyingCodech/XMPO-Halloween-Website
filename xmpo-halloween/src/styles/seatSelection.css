@@ -112,7 +112,7 @@
 .seat {
   width: 18px;
   height: 18px;
-  border: 1px solid #555; /* Darker border */
+  /* border: 1px solid #555; */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,32 +137,28 @@
   border-color: #ff8a00;
 }
 
-/* Updated deluxe seat color for dark mode */
 .seat.deluxe {
-  background-color: #ff6961a7; /* Darker yellow */
-  /* border-color: #8a8a3a; */
+  background-color: #cb2841;
   color: #fff;
 }
 
 .seat.normal {
-  background-color: #b18e7f9b;
-  border-color: #d2b1a3a2;
+  background-color: #b24f17;
   color: #fff;
 }
 
 .seat.reserved {
   background-color: #4a4a4a; /* Darker reserved color */
-  border-color: #666;
-  color: #fff;
+  color: #000;
   cursor: not-allowed;
 }
 
 /* Updated selected seat color for dark mode */
 .seat.selected {
-  background-color: #2d5a2d; /* Darker green */
+  background-color: #34BF34;
   border-color: #4a8a4a;
   font-weight: bold;
-  color: #fff; /* White text for selected seats */
+  color: #fff;
   box-shadow: 0 0 8px rgba(74, 138, 74, 0.5);
 }
 

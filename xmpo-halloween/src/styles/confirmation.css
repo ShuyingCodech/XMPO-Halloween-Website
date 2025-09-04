@@ -155,8 +155,13 @@
 /* File Upload Styles */
 .file-upload {
   display: flex;
-  align-items: center;
+  align-items: self-start;
   gap: 1rem;
+}
+
+.file-upload span {
+  display: flex;
+  align-items: self-start;
 }
 
 .file-upload input[type="file"] {

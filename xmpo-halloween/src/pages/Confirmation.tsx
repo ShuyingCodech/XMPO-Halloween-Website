@@ -62,7 +62,7 @@ const sendBookingConfirmationEmail = async (bookingData: any) => {
     };
 
     const result = await emailjs.send(
-      "service_g16lare", // Get from EmailJS dashboard
+      "service_eze2a64", // Get from EmailJS dashboard
       "template_msy2i8d", // Create template in EmailJS dashboard
       templateParams
     );
