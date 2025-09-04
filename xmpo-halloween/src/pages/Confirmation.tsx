@@ -1,6 +1,6 @@
-// Fixed Confirmation.tsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import emailjs from "@emailjs/browser";
 import "../styles/confirmation.css";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
@@ -21,6 +21,59 @@ interface TicketData {
     normal: string[];
   };
 }
+
+// Initialize EmailJS (do this once in your app)
+emailjs.init("DytKDFiXjf6QbWru_"); // Get this from EmailJS dashboard
+
+// Email service function using EmailJS
+const sendBookingConfirmationEmail = async (bookingData: any) => {
+  try {
+    // Determine zone based on seats
+    let zones = [];
+    if (bookingData.seatTypes.deluxe?.length > 0) zones.push("Deluxe");
+    if (bookingData.seatTypes.normal?.length > 0) zones.push("Standard");
+    const zoneText = zones.join(", ");
+
+    // Prepare template parameters
+    const templateParams = {
+      to_name: bookingData.name,
+      to_email: bookingData.email,
+      customer_name: bookingData.name,
+      student_id: bookingData.studentId || "N/A",
+      contact_no: bookingData.contactNo,
+      zone: zoneText,
+      selected_seats: bookingData.selectedSeats.join(", "),
+      total_price: bookingData.totalPrice,
+      booking_id: bookingData.bookingId || "N/A",
+      // Concert details (static)
+      concert_title:
+        '"Nightmare on Symphony Street" - A Chamber Orchestra Concert',
+      concert_date: "1st Nov 2025 (Saturday)",
+      concert_times: `6.00pm, Registration Starts
+6.30pm, Hall Entry Starts  
+7.00pm, Concert Starts`,
+      venue: "Tan Hua Choon Auditorium, Xiamen University Malaysia",
+      // Contact information
+      contact_1: "TEE ZHI YEN: 011-51110830 (OC)",
+      contact_2: "KHOO LI LING: 017-2009299 (VOC)",
+      contact_3: "BEY HUI YIEN: 011-11937687 (VOC)",
+      contact_4: "ON ZHE QIE: 019-2210298 (Ticketing)",
+      contact_5: "LAI YAN WEN: 010-4629023 (Ticketing)",
+    };
+
+    const result = await emailjs.send(
+      "service_g16lare", // Get from EmailJS dashboard
+      "template_msy2i8d", // Create template in EmailJS dashboard
+      templateParams
+    );
+
+    console.log("Email sent successfully:", result);
+    return result;
+  } catch (error) {
+    console.error("Error sending email:", error);
+    throw error;
+  }
+};
 
 const Confirmation: React.FC = () => {
   const navigate = useNavigate();
@@ -109,15 +162,6 @@ const Confirmation: React.FC = () => {
       ...prev,
       [name]: value,
     }));
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({
-        ...prev,
-        paymentReceipt: e.target.files![0],
-      }));
-    }
   };
 
   const handleFileChange = (info: any) => {
@@ -233,7 +277,6 @@ const Confirmation: React.FC = () => {
         seatTypes: ticketData.seatTypes,
         totalPrice: ticketData.totalPrice,
         selectedPackages: ticketData.selectedPackages,
-        // receiptUrl will be added after upload
       };
 
       // Create booking with payment receipt
@@ -242,16 +285,35 @@ const Confirmation: React.FC = () => {
         formData.paymentReceipt ?? undefined
       );
 
-      notification.success({
-        message: "Booking Confirmed!",
-        description: `Your booking has been submitted successfully.`,
-        duration: 8,
-      });
+      // Prepare email data with booking ID from result
+      const emailData = {
+        ...bookingData,
+        bookingId: result?.bookingId || null,
+      };
+
+      // Send confirmation email using EmailJS
+      try {
+        await sendBookingConfirmationEmail(emailData);
+
+        notification.success({
+          message: "Booking Confirmed!",
+          duration: 8,
+        });
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+
+        notification.warning({
+          message: "Booking Confirmed",
+          description:
+            "Your booking was successful, but we couldn't send a confirmation email. Please save your booking details.",
+          duration: 8,
+        });
+      }
 
       // Clear session storage
       sessionStorage.removeItem("ticketData");
 
-      // Navigate to success page 
+      // Navigate to success page
       navigate("/success");
       setTimeout(scrollToTop, 100);
     } catch (error) {
@@ -433,7 +495,6 @@ const Confirmation: React.FC = () => {
                       return Upload.LIST_IGNORE;
                     }
 
-                    // Check file size (max 5MB)
                     const maxSize = 5 * 1024 * 1024; // 5MB
                     if (file.size > maxSize) {
                       notification.error({

@@ -14,7 +14,8 @@ const Success: React.FC = () => {
   const handleBackToEvent = () => {
     // Clear session storage since order is complete
     sessionStorage.removeItem("ticketData");
-    navigate("/"); // Assuming "/" is your event page route
+    window.location.href =
+      "https://xmposite.wixsite.com/xmumphilharmonic/halloween-concert";
     setTimeout(scrollToTop, 100);
   };
 

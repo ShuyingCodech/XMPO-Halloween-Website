@@ -142,6 +142,17 @@ const SeatSelection: React.FC = () => {
     return parseInt(parts[1]);
   };
 
+  // Helper function to determine if seat number should be hidden
+  const shouldHideSeatNumber = (row: number, seatNum: number) => {
+    // Hide all seat numbers in row 1
+    if (row === 1) return true;
+
+    // Hide seat numbers 1, 2, 3 in rows 12 and 13
+    if ((row === 12 || row === 13) && seatNum >= 1 && seatNum <= 3) return true;
+
+    return false;
+  };
+
   // Validation function to check for odd empty seats - now used for payment validation
   const validateAllSeatSelections = (): {
     isValid: boolean;
@@ -416,6 +427,9 @@ const SeatSelection: React.FC = () => {
             ? zones[zone as keyof typeof zones].color
             : "normal";
 
+        // Determine if seat number should be displayed
+        const hideSeatNumber = shouldHideSeatNumber(row, seatNum) || isLastRow;
+
         return (
           <div
             key={seatCode}
@@ -427,7 +441,7 @@ const SeatSelection: React.FC = () => {
             }
             style={isReserved || isDisabled ? { cursor: "not-allowed" } : {}}
           >
-            {!isLastRow && seatNum}
+            {!hideSeatNumber && seatNum}
           </div>
         );
       });

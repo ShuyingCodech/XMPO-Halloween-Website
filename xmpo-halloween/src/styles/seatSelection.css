@@ -139,9 +139,9 @@
 
 /* Updated deluxe seat color for dark mode */
 .seat.deluxe {
-  background-color: #5a5a2c; /* Darker yellow */
-  border-color: #8a8a3a;
-  color: #fff; /* White text for better contrast */
+  background-color: #ff6961a7; /* Darker yellow */
+  /* border-color: #8a8a3a; */
+  color: #fff;
 }
 
 .seat.normal {
