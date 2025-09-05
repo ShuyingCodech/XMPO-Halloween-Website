@@ -5,6 +5,8 @@ import {
   deleteDoc,
   doc,
   updateDoc,
+  query,
+  where,
 } from "firebase/firestore";
 import { firestore } from "../firebase";
 import { Checkbox } from "antd";
@@ -105,9 +107,28 @@ const Admin: React.FC = () => {
   const handleDeleteBooking = async (bookingId: string) => {
     if (window.confirm("Are you sure you want to delete this booking?")) {
       try {
+        // Delete associated reserved seats
+        const reservedSeatsQuery = query(
+          collection(firestore, "reserved_seats"),
+          where("bookingId", "==", bookingId)
+        );
+
+        const reservedSeatsSnapshot = await getDocs(reservedSeatsQuery);
+
+        // Delete all reserved seats documents for this booking
+        const deleteReservedSeatsPromises = reservedSeatsSnapshot.docs.map(
+          (doc) => deleteDoc(doc.ref)
+        );
+
+        await Promise.all(deleteReservedSeatsPromises);
+
+        // Delete the main booking document
         await deleteDoc(doc(firestore, "bookings", bookingId));
+
+        // Reload bookings to refresh the UI
         await loadBookings();
-        alert("Booking deleted successfully!");
+
+        alert("Booking and associated seat reservations deleted successfully!");
       } catch (error) {
         console.error("Error deleting booking:", error);
         alert("Error deleting booking. Please try again.");

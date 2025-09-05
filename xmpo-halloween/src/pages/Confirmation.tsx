@@ -49,8 +49,7 @@ const sendBookingConfirmationEmail = async (bookingData: any) => {
       concert_title:
         '"Nightmare on Symphony Street" - A Chamber Orchestra Concert',
       concert_date: "1st Nov 2025 (Saturday)",
-      concert_times: `6.00pm, Registration Starts
-6.30pm, Hall Entry Starts  
+      concert_times: `6.00pm, Hall Open
 7.00pm, Concert Starts`,
       venue: "Tan Hua Choon Auditorium, Xiamen University Malaysia",
       // Contact information

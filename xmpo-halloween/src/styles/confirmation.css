@@ -341,6 +341,28 @@
     padding: 0.8rem 1.5rem;
     font-size: 0.95rem;
   }
+
+  .file-upload {
+    display: flex;
+    align-items: self-start;
+    align-self: flex-start;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .file-upload .ant-upload-list-item {
+    display: flex;
+    align-items: self-start;
+  }
+
+  .file-upload span {
+    display: block;
+    align-items: normal;
+  }
+
+  .file-upload .ant-btn {
+    margin-bottom: 10px;
+  }
 }
 
 /* Legacy styles for backward compatibility */
