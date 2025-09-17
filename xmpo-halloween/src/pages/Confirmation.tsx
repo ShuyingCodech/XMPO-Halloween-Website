@@ -11,6 +11,7 @@ import {
   checkSeatsAvailability,
   createBooking,
 } from "../services/firebaseService";
+import { checkEarlyBirdStatus } from "../utils/common";
 
 interface TicketData {
   selectedSeats: string[];
@@ -21,6 +22,18 @@ interface TicketData {
     normal: string[];
   };
 }
+
+// Pricing configuration
+const PRICING = {
+  earlyBird: {
+    deluxe: 40,
+    normal: 20,
+  },
+  normal: {
+    deluxe: 45,
+    normal: 25,
+  },
+};
 
 // Initialize EmailJS (do this once in your app)
 emailjs.init("DytKDFiXjf6QbWru_"); // Get this from EmailJS dashboard
@@ -79,6 +92,8 @@ const Confirmation: React.FC = () => {
   const [imageUpload, setImageUpload] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
+  const [isEarlyBird, setIsEarlyBird] = useState<boolean>(true);
+  const [currentPricing, setCurrentPricing] = useState(PRICING.earlyBird);
   const [formData, setFormData] = useState({
     name: "",
     studentId: "",
@@ -109,7 +124,50 @@ const Confirmation: React.FC = () => {
     };
   };
 
+  // Function to recalculate total price based on current pricing
+  const recalculatePrice = (seatTypes: {
+    deluxe: string[];
+    normal: string[];
+  }) => {
+    const pricing = checkEarlyBirdStatus() ? PRICING.earlyBird : PRICING.normal;
+    const deluxeCount = seatTypes.deluxe?.length || 0;
+    const normalCount = seatTypes.normal?.length || 0;
+
+    return deluxeCount * pricing.deluxe + normalCount * pricing.normal;
+  };
+
+  // Function to check and update pricing status
+  const updatePricingStatus = () => {
+    const currentIsEarlyBird = checkEarlyBirdStatus();
+    console.log("Current Early Bird Status:", currentIsEarlyBird);
+    const newPricing = currentIsEarlyBird ? PRICING.earlyBird : PRICING.normal;
+
+    setIsEarlyBird(currentIsEarlyBird);
+    setCurrentPricing(newPricing);
+
+    // Update ticket data with new pricing if it exists
+    if (ticketData) {
+      const newTotalPrice = recalculatePrice(ticketData.seatTypes);
+
+      // Only update if price changed
+      if (newTotalPrice !== ticketData.totalPrice) {
+        const updatedTicketData = {
+          ...ticketData,
+          totalPrice: newTotalPrice,
+        };
+
+        setTicketData(updatedTicketData);
+
+        // Update session storage with new pricing
+        sessionStorage.setItem("ticketData", JSON.stringify(updatedTicketData));
+      }
+    }
+  };
+
   useEffect(() => {
+    // Initial pricing status check
+    updatePricingStatus();
+
     // Load ticket data from session storage
     const storedTicketData = sessionStorage.getItem("ticketData");
     if (!storedTicketData) {
@@ -143,7 +201,14 @@ const Confirmation: React.FC = () => {
         data.seatTypes.normal = [];
       }
 
+      // Recalculate price based on current pricing
+      const recalculatedPrice = recalculatePrice(data.seatTypes);
+      data.totalPrice = recalculatedPrice;
+
       setTicketData(data);
+
+      // Update session storage with recalculated price
+      sessionStorage.setItem("ticketData", JSON.stringify(data));
     } catch (error) {
       notification.error({
         message: "Invalid Booking Data",
@@ -153,6 +218,12 @@ const Confirmation: React.FC = () => {
       navigate("/seat-selection");
       setTimeout(scrollToTop, 100);
     }
+
+    // Set up interval to check pricing status every minute
+    const pricingInterval = setInterval(updatePricingStatus, 60000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(pricingInterval);
   }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,6 +319,9 @@ const Confirmation: React.FC = () => {
     setLoading(true);
 
     try {
+      // Final pricing check before confirmation
+      updatePricingStatus();
+
       // Double-check seat availability before confirming
       const isAvailable = await checkSeatsAvailability(
         ticketData.selectedSeats
@@ -381,18 +455,26 @@ const Confirmation: React.FC = () => {
               {ticketData.seatTypes?.deluxe?.length > 0 && (
                 <div className="summary-item">
                   <span>Deluxe Tickets</span>
-                  <span>{ticketData.seatTypes.deluxe.length} × RM 40</span>
+                  <span>
+                    {ticketData.seatTypes.deluxe.length} × RM{" "}
+                    {currentPricing.deluxe}
+                  </span>
                   <span className="item-total">
-                    RM {ticketData.seatTypes.deluxe.length * 40}
+                    RM{" "}
+                    {ticketData.seatTypes.deluxe.length * currentPricing.deluxe}
                   </span>
                 </div>
               )}
               {ticketData.seatTypes?.normal?.length > 0 && (
                 <div className="summary-item">
                   <span>Standard Tickets</span>
-                  <span>{ticketData.seatTypes.normal.length} × RM 20</span>
+                  <span>
+                    {ticketData.seatTypes.normal.length} × RM{" "}
+                    {currentPricing.normal}
+                  </span>
                   <span className="item-total">
-                    RM {ticketData.seatTypes.normal.length * 20}
+                    RM{" "}
+                    {ticketData.seatTypes.normal.length * currentPricing.normal}
                   </span>
                 </div>
               )}

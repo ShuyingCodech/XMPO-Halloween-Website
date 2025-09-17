@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import "../styles/payment.css";
+import { notification } from "antd";
+import { checkEarlyBirdStatus } from "../utils/common";
 
 interface CartItem {
   type: string;
@@ -17,6 +19,24 @@ const Payment: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isEarlyBird, setIsEarlyBird] = useState(true);
+
+  const seatPrices = {
+    Deluxe: { original: 45, earlyBird: 40 },
+    Standard: { original: 25, earlyBird: 20 },
+  };
+
+  // Function to get current price based on early bird status
+  const getCurrentPrice = (zoneType: string, earlyBirdStatus: boolean) => {
+    if (zoneType === "Deluxe") {
+      return earlyBirdStatus
+        ? seatPrices.Deluxe.earlyBird
+        : seatPrices.Deluxe.original;
+    }
+    return earlyBirdStatus
+      ? seatPrices.Standard.earlyBird
+      : seatPrices.Standard.original;
+  };
 
   // Helper function to get zone type from seat code
   const getZoneType = (seatCode: string) => {
@@ -40,42 +60,130 @@ const Payment: React.FC = () => {
     };
   };
 
+  // Function to recalculate cart items and total based on current pricing
+  const recalculateCartItems = (
+    selectedSeats: string[],
+    earlyBirdStatus: boolean
+  ) => {
+    const items: CartItem[] = [];
+    let newTotal = 0;
+
+    if (selectedSeats && selectedSeats.length > 0) {
+      const { deluxe: deluxeSeats, normal: normalSeats } =
+        getSelectedSeatsByZone(selectedSeats);
+
+      // Add deluxe tickets if any
+      if (deluxeSeats.length > 0) {
+        const deluxePrice = getCurrentPrice("Deluxe", earlyBirdStatus);
+        const deluxeSubtotal = deluxeSeats.length * deluxePrice;
+        items.push({
+          type: "deluxe",
+          name: "Deluxe Ticket",
+          quantity: deluxeSeats.length,
+          unitPrice: deluxePrice,
+          price: deluxeSubtotal,
+        });
+        newTotal += deluxeSubtotal;
+      }
+
+      // Add normal tickets if any
+      if (normalSeats.length > 0) {
+        const standardPrice = getCurrentPrice("Standard", earlyBirdStatus);
+        const standardSubtotal = normalSeats.length * standardPrice;
+        items.push({
+          type: "normal",
+          name: "Standard Ticket",
+          quantity: normalSeats.length,
+          unitPrice: standardPrice,
+          price: standardSubtotal,
+        });
+        newTotal += standardSubtotal;
+      }
+    }
+
+    return { items, newTotal };
+  };
+
+  // Update session storage with new pricing
+  const updateSessionStorage = (
+    selectedSeats: string[],
+    selectedPackages: string[],
+    newTotal: number
+  ) => {
+    const ticketData = {
+      selectedSeats,
+      totalPrice: newTotal,
+      selectedPackages,
+    };
+    sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
+  };
+
+  // Set up interval to check early bird status
+  useEffect(() => {
+    const updateEarlyBirdStatus = () => {
+      const newEarlyBirdStatus = checkEarlyBirdStatus();
+      if (newEarlyBirdStatus !== isEarlyBird) {
+        setIsEarlyBird(newEarlyBirdStatus);
+
+        // Get current ticket data
+        const ticketData = sessionStorage.getItem("ticketData");
+        if (ticketData) {
+          const data = JSON.parse(ticketData);
+
+          // Recalculate with new pricing
+          const { items, newTotal } = recalculateCartItems(
+            data.selectedSeats || [],
+            newEarlyBirdStatus
+          );
+
+          setCartItems(items);
+          setTotal(newTotal);
+
+          // Update session storage
+          updateSessionStorage(
+            data.selectedSeats || [],
+            data.selectedPackages || [],
+            newTotal
+          );
+        }
+      }
+    };
+
+    // Check immediately
+    updateEarlyBirdStatus();
+
+    // Check every minute
+    const interval = setInterval(updateEarlyBirdStatus, 60000);
+
+    return () => clearInterval(interval);
+  }, [isEarlyBird]);
+
   useEffect(() => {
     const ticketData = sessionStorage.getItem("ticketData");
     if (ticketData) {
       const data = JSON.parse(ticketData);
-      const items: CartItem[] = [];
 
-      if (data.selectedSeats && data.selectedSeats.length > 0) {
-        const seatPrices = { Deluxe: 40, Standard: 20 };
-        const { deluxe: deluxeSeats, normal: normalSeats } =
-          getSelectedSeatsByZone(data.selectedSeats);
+      // Check current early bird status
+      const currentEarlyBirdStatus = checkEarlyBirdStatus();
+      setIsEarlyBird(currentEarlyBirdStatus);
 
-        // Add deluxe tickets if any
-        if (deluxeSeats.length > 0) {
-          items.push({
-            type: "deluxe",
-            name: "Deluxe Ticket",
-            quantity: deluxeSeats.length,
-            unitPrice: seatPrices.Deluxe,
-            price: deluxeSeats.length * seatPrices.Deluxe,
-          });
-        }
-
-        // Add normal tickets if any
-        if (normalSeats.length > 0) {
-          items.push({
-            type: "normal",
-            name: "Standard Ticket",
-            quantity: normalSeats.length,
-            unitPrice: seatPrices.Standard,
-            price: normalSeats.length * seatPrices.Standard,
-          });
-        }
-      }
+      // Calculate cart items with current pricing
+      const { items, newTotal } = recalculateCartItems(
+        data.selectedSeats || [],
+        currentEarlyBirdStatus
+      );
 
       setCartItems(items);
-      setTotal(data.totalPrice || 0);
+      setTotal(newTotal);
+
+      // Update session storage if price changed
+      if (newTotal !== data.totalPrice) {
+        updateSessionStorage(
+          data.selectedSeats || [],
+          data.selectedPackages || [],
+          newTotal
+        );
+      }
     }
   }, []);
 
