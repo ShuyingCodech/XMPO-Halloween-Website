@@ -139,7 +139,6 @@ const Confirmation: React.FC = () => {
   // Function to check and update pricing status
   const updatePricingStatus = () => {
     const currentIsEarlyBird = checkEarlyBirdStatus();
-    console.log("Current Early Bird Status:", currentIsEarlyBird);
     const newPricing = currentIsEarlyBird ? PRICING.earlyBird : PRICING.normal;
 
     setIsEarlyBird(currentIsEarlyBird);

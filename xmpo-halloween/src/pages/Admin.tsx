@@ -30,6 +30,24 @@ interface BookingDetails {
   redeemed: boolean;
 }
 
+interface SalesStats {
+  earlyBird: {
+    deluxeCount: number;
+    standardCount: number;
+    revenue: number;
+  };
+  normal: {
+    deluxeCount: number;
+    standardCount: number;
+    revenue: number;
+  };
+  total: {
+    deluxeCount: number;
+    standardCount: number;
+    revenue: number;
+  };
+}
+
 const Admin: React.FC = () => {
   const [bookings, setBookings] = useState<BookingDetails[]>([]);
   const [filteredBookings, setFilteredBookings] = useState<BookingDetails[]>(
@@ -38,10 +56,57 @@ const Admin: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
   const [loading, setLoading] = useState(true);
+  const [salesStats, setSalesStats] = useState<SalesStats>({
+    earlyBird: { deluxeCount: 0, standardCount: 0, revenue: 0 },
+    normal: { deluxeCount: 0, standardCount: 0, revenue: 0 },
+    total: { deluxeCount: 0, standardCount: 0, revenue: 0 },
+  });
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
+
+  // Early bird cutoff date - 18th Sep 2025, 00:00 Malaysia Time
+  const earlyBirdCutoff = new Date("2025-09-18T00:00:00+08:00");
+
+  const isEarlyBirdBooking = (createdAt: any): boolean => {
+    if (!createdAt) return false;
+    const bookingDate = createdAt.seconds
+      ? new Date(createdAt.seconds * 1000)
+      : new Date(createdAt);
+    return bookingDate < earlyBirdCutoff;
+  };
+
+  const calculateSalesStats = (bookingsList: BookingDetails[]): SalesStats => {
+    const stats: SalesStats = {
+      earlyBird: { deluxeCount: 0, standardCount: 0, revenue: 0 },
+      normal: { deluxeCount: 0, standardCount: 0, revenue: 0 },
+      total: { deluxeCount: 0, standardCount: 0, revenue: 0 },
+    };
+
+    bookingsList.forEach((booking) => {
+      const isEarlyBird = isEarlyBirdBooking(booking.createdAt);
+      const deluxeCount = booking.seatTypes?.deluxe?.length || 0;
+      const standardCount = booking.seatTypes?.normal?.length || 0;
+
+      if (isEarlyBird) {
+        stats.earlyBird.deluxeCount += deluxeCount;
+        stats.earlyBird.standardCount += standardCount;
+        stats.earlyBird.revenue += booking.totalPrice;
+      } else {
+        stats.normal.deluxeCount += deluxeCount;
+        stats.normal.standardCount += standardCount;
+        stats.normal.revenue += booking.totalPrice;
+      }
+
+      // Total stats
+      stats.total.deluxeCount += deluxeCount;
+      stats.total.standardCount += standardCount;
+      stats.total.revenue += booking.totalPrice;
+    });
+
+    return stats;
+  };
 
   useEffect(() => {
     loadBookings();
@@ -64,6 +129,7 @@ const Admin: React.FC = () => {
 
       setBookings(bookingsData);
       setFilteredBookings(bookingsData);
+      setSalesStats(calculateSalesStats(bookingsData));
     } catch (error) {
       console.error("Error loading bookings:", error);
     } finally {
@@ -100,6 +166,7 @@ const Admin: React.FC = () => {
     });
 
     setFilteredBookings(filtered);
+    setSalesStats(calculateSalesStats(filtered));
     // Reset to first page when filtering/sorting changes
     setCurrentPage(1);
   }, [bookings, searchTerm, sortBy]);
@@ -148,7 +215,7 @@ const Admin: React.FC = () => {
   };
 
   const formatCurrency = (amount: number) => {
-    return `RM ${amount.toFixed(2)}`;
+    return `RM ${amount}`;
   };
 
   const formatDate = (timestamp: any) => {
@@ -163,20 +230,6 @@ const Admin: React.FC = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  const getTotalRevenue = () => {
-    return filteredBookings.reduce(
-      (total, booking) => total + booking.totalPrice,
-      0
-    );
-  };
-
-  const getTotalSeats = () => {
-    return filteredBookings.reduce(
-      (total, booking) => total + booking.selectedSeats.length,
-      0
-    );
   };
 
   // Pagination calculations
@@ -248,6 +301,174 @@ const Admin: React.FC = () => {
         <h1>Payment Records</h1>
       </div>
 
+      {/* Sales Statistics Dashboard */}
+      <div className="sales-dashboard">
+        <h3 className="dashboard-title">Sales Overview</h3>
+
+        <div className="stats-grid">
+          {/* Early Bird Sales */}
+          <div className="stats-card early-bird">
+            <div className="stats-header">
+              <h4>Early Bird Sales</h4>
+              <span className="period-label">Until 17th Sep 2025</span>
+            </div>
+
+            <div className="sales-table">
+              <div className="table-header">
+                <div className="header-item">Item</div>
+                <div className="header-qty">Qty</div>
+                <div className="header-unit-price">Unit Price</div>
+                <div className="header-subtotal">Subtotal</div>
+              </div>
+
+              {/* Deluxe Early Bird */}
+              <div className="table-row deluxe">
+                <div className="item-info">
+                  <img
+                    src="./images/deluxe-t.avif"
+                    alt="Deluxe Ticket"
+                    className="item-image"
+                  />
+                  <span className="item-name">Deluxe Ticket (Early Bird)</span>
+                </div>
+                <div className="item-qty">
+                  {salesStats.earlyBird.deluxeCount}
+                </div>
+                <div className="item-unit-price">RM 40</div>
+                <div className="item-subtotal">
+                  {formatCurrency(salesStats.earlyBird.deluxeCount * 40)}
+                </div>
+              </div>
+
+              {/* Standard Early Bird */}
+              <div className="table-row normal">
+                <div className="item-info">
+                  <img
+                    src="./images/normal-t.avif"
+                    alt="Standard Ticket"
+                    className="item-image"
+                  />
+                  <span className="item-name">
+                    Standard Ticket (Early Bird)
+                  </span>
+                </div>
+                <div className="item-qty">
+                  {salesStats.earlyBird.standardCount}
+                </div>
+                <div className="item-unit-price">RM 20</div>
+                <div className="item-subtotal">
+                  {formatCurrency(salesStats.earlyBird.standardCount * 20)}
+                </div>
+              </div>
+
+              <div className="table-total">
+                <div className="total-label">Early Bird Revenue:</div>
+                <div className="total-amount">
+                  {formatCurrency(salesStats.earlyBird.revenue)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Normal Sales */}
+          <div className="stats-card normal-sales">
+            <div className="stats-header">
+              <h4>Regular Sales</h4>
+              <span className="period-label">From 18th Sep 2025</span>
+            </div>
+
+            <div className="sales-table">
+              <div className="table-header">
+                <div className="header-item">Item</div>
+                <div className="header-qty">Qty</div>
+                <div className="header-unit-price">Unit Price</div>
+                <div className="header-subtotal">Subtotal</div>
+              </div>
+
+              {/* Deluxe Normal */}
+              <div className="table-row deluxe">
+                <div className="item-info">
+                  <img
+                    src="./images/deluxe-t.avif"
+                    alt="Deluxe Ticket"
+                    className="item-image"
+                  />
+                  <span className="item-name">Deluxe Ticket (Normal)</span>
+                </div>
+                <div className="item-qty">{salesStats.normal.deluxeCount}</div>
+                <div className="item-unit-price">RM 45</div>
+                <div className="item-subtotal">
+                  {formatCurrency(salesStats.normal.deluxeCount * 45)}
+                </div>
+              </div>
+
+              {/* Standard Normal */}
+              <div className="table-row normal">
+                <div className="item-info">
+                  <img
+                    src="./images/normal-t.avif"
+                    alt="Standard Ticket"
+                    className="item-image"
+                  />
+                  <span className="item-name">Standard Ticket (Normal)</span>
+                </div>
+                <div className="item-qty">
+                  {salesStats.normal.standardCount}
+                </div>
+                <div className="item-unit-price">RM 25</div>
+                <div className="item-subtotal">
+                  {formatCurrency(salesStats.normal.standardCount * 25)}
+                </div>
+              </div>
+
+              <div className="table-total">
+                <div className="total-label">Regular Revenue:</div>
+                <div className="total-amount">
+                  {formatCurrency(salesStats.normal.revenue)}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Total Sales Summary */}
+          <div className="stats-card total-sales">
+            <div className="stats-header">
+              <h4>Total Sales Summary</h4>
+              <span className="period-label">Overall Performance</span>
+            </div>
+
+            <div className="summary-stats">
+              <div className="summary-item">
+                <span className="summary-label">Total Deluxe Tickets</span>
+                <span className="summary-value">
+                  {salesStats.total.deluxeCount}
+                </span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Total Standard Tickets</span>
+                <span className="summary-value">
+                  {salesStats.total.standardCount}
+                </span>
+              </div>
+              <div className="summary-item">
+                <span className="summary-label">Total Tickets Sold</span>
+                <span className="summary-value">
+                  {salesStats.total.deluxeCount +
+                    salesStats.total.standardCount}
+                </span>
+              </div>
+
+              <div className="grand-total">
+                <div className="total-label">Total Revenue:</div>
+                <div className="total-amount">
+                  {formatCurrency(salesStats.total.revenue)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="admin-controls">
         <div className="search-container">
           <input
@@ -305,94 +526,109 @@ const Admin: React.FC = () => {
                   <th>Customer Details</th>
                   <th>Seats & Pricing</th>
                   <th>Packages</th>
-                  <th>Total Amount</th>
+                  <th>Total Revenue</th>
                   <th>Receipt</th>
                   <th>Booking Time</th>
+                  <th>Pricing Type</th>
                   <th>Redeemed</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {currentBookings.map((booking) => (
-                  <tr key={booking.id}>
-                    <td>
-                      <div className="customer-info">
-                        <strong>{booking.name}</strong>
-                        {booking.studentId && (
-                          <div className="student-id">
-                            Student ID: {booking.studentId}
+                {currentBookings.map((booking) => {
+                  const isEarlyBird = isEarlyBirdBooking(booking.createdAt);
+                  return (
+                    <tr key={booking.id}>
+                      <td>
+                        <div className="customer-info">
+                          <strong>{booking.name}</strong>
+                          {booking.studentId && (
+                            <div className="student-id">
+                              Student ID: {booking.studentId}
+                            </div>
+                          )}
+                          <div className="contact-details">
+                            <div>{booking.email}</div>
+                            <div className="phone">{booking.contactNo}</div>
                           </div>
-                        )}
-                        <div className="contact-details">
-                          <div>{booking.email}</div>
-                          <div className="phone">{booking.contactNo}</div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div className="seat-info">
-                        <div className="seats-list">
-                          <strong>Seats:</strong>{" "}
-                          {booking.selectedSeats.join(", ")}
+                      </td>
+                      <td>
+                        <div className="seat-info">
+                          <div className="seats-list">
+                            <strong>Seats:</strong>{" "}
+                            {booking.selectedSeats.join(", ")}
+                          </div>
+                          {booking.seatTypes?.deluxe?.length > 0 && (
+                            <div className="seat-type">
+                              Deluxe: {booking.seatTypes.deluxe.length} × RM{" "}
+                              {isEarlyBird ? 40 : 45}
+                            </div>
+                          )}
+                          {booking.seatTypes?.normal?.length > 0 && (
+                            <div className="seat-type">
+                              Standard: {booking.seatTypes.normal.length} × RM{" "}
+                              {isEarlyBird ? 20 : 25}
+                            </div>
+                          )}
                         </div>
-                        {booking.seatTypes?.deluxe?.length > 0 && (
-                          <div className="seat-type">
-                            Deluxe: {booking.seatTypes.deluxe.length} × RM 40
-                          </div>
+                      </td>
+                      <td>
+                        <div className="packages">
+                          {booking.selectedPackages?.length > 0
+                            ? booking.selectedPackages.join(", ")
+                            : "None"}
+                        </div>
+                      </td>
+                      <td className="amount">
+                        {formatCurrency(booking.totalPrice)}
+                      </td>
+                      <td>
+                        {booking.receiptUrl ? (
+                          <a
+                            href={booking.receiptUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="receipt-link"
+                          >
+                            View Receipt
+                          </a>
+                        ) : (
+                          <span className="no-receipt">No receipt</span>
                         )}
-                        {booking.seatTypes?.normal?.length > 0 && (
-                          <div className="seat-type">
-                            Standard: {booking.seatTypes.normal.length} × RM 20
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="packages">
-                        {booking.selectedPackages?.length > 0
-                          ? booking.selectedPackages.join(", ")
-                          : "None"}
-                      </div>
-                    </td>
-                    <td className="amount">
-                      {formatCurrency(booking.totalPrice)}
-                    </td>
-                    <td>
-                      {booking.receiptUrl ? (
-                        <a
-                          href={booking.receiptUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="receipt-link"
+                      </td>
+                      <td className="booking-time">
+                        {formatDate(booking.createdAt)}
+                      </td>
+                      <td>
+                        <span
+                          className={`pricing-type ${
+                            isEarlyBird ? "early-bird" : "normal"
+                          }`}
                         >
-                          View Receipt
-                        </a>
-                      ) : (
-                        <span className="no-receipt">No receipt</span>
-                      )}
-                    </td>
-                    <td className="booking-time">
-                      {formatDate(booking.createdAt)}
-                    </td>
-                    <td>
-                      <Checkbox
-                        checked={booking.redeemed}
-                        onChange={(e) =>
-                          handleRedeemChange(booking.id, e.target.checked)
-                        }
-                      />
-                    </td>
-                    <td>
-                      <button
-                        onClick={() => handleDeleteBooking(booking.id)}
-                        className="delete-btn"
-                        title="Delete booking"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                          {isEarlyBird ? "Early Bird" : "Normal"}
+                        </span>
+                      </td>
+                      <td>
+                        <Checkbox
+                          checked={booking.redeemed}
+                          onChange={(e) =>
+                            handleRedeemChange(booking.id, e.target.checked)
+                          }
+                        />
+                      </td>
+                      <td>
+                        <button
+                          onClick={() => handleDeleteBooking(booking.id)}
+                          className="delete-btn"
+                          title="Delete booking"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
 

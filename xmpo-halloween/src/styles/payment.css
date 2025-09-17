@@ -408,7 +408,7 @@
     display: grid;
     grid-template-columns: 1.8fr 0.6fr 0.9fr 0.9fr;
     gap: 0.5rem;
-    padding: 0 0.5rem;
+    padding: 0.5rem;
     border-radius: 0 0 8px 8px;
     margin: 0;
     background-color: #333; /* Dark background */
@@ -488,7 +488,7 @@
   .receipt-total {
     grid-template-columns: 1.5fr 0.5fr 0.8fr 0.8fr;
     gap: 0.3rem;
-    padding: 0 0.3rem;
+    padding: 0.3rem;
   }
 
   .total-label {
