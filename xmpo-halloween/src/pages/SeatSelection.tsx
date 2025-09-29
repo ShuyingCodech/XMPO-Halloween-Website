@@ -108,32 +108,32 @@ const SeatSelection: React.FC = () => {
 
   // Set up interval to check early bird status
   useEffect(() => {
-    const updateEarlyBirdStatus = () => {
-      const newEarlyBirdStatus = checkEarlyBirdStatus();
-      if (newEarlyBirdStatus !== isEarlyBird) {
-        setIsEarlyBird(newEarlyBirdStatus);
+    // const updateEarlyBirdStatus = () => {
+    //   const newEarlyBirdStatus = checkEarlyBirdStatus();
+    //   if (newEarlyBirdStatus !== isEarlyBird) {
+    //     setIsEarlyBird(newEarlyBirdStatus);
 
-        // Recalculate price with new status
-        const newPrice = recalculatePrice(selectedSeats, newEarlyBirdStatus);
-        setTotalPrice(newPrice);
+    //     // Recalculate price with new status
+    //     const newPrice = recalculatePrice(selectedSeats, newEarlyBirdStatus);
+    //     setTotalPrice(newPrice);
 
-        // Update session storage
-        const ticketData = {
-          selectedSeats,
-          totalPrice: newPrice,
-          selectedPackages,
-        };
-        sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
-      }
-    };
+    //     // Update session storage
+    //     const ticketData = {
+    //       selectedSeats,
+    //       totalPrice: newPrice,
+    //       selectedPackages,
+    //     };
+    //     sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
+    //   }
+    // };
 
-    // Check immediately
-    updateEarlyBirdStatus();
+    // // Check immediately
+    // updateEarlyBirdStatus();
 
     // Check every minute
-    const interval = setInterval(updateEarlyBirdStatus, 60000);
+    // const interval = setInterval(updateEarlyBirdStatus, 60000);
 
-    return () => clearInterval(interval);
+    // return () => clearInterval(interval);
   }, [isEarlyBird, selectedSeats, selectedPackages]);
 
   // Helper function to get row number from seat code
@@ -226,6 +226,8 @@ const SeatSelection: React.FC = () => {
       setTotalPrice(recalculatedPrice);
     }
   }, []);
+
+  useEffect(() => {}, [selectedSeats]);
 
   // Helper function to get seat number from seat code
   const getSeatNumber = (seatCode: string) => {
@@ -388,40 +390,6 @@ const SeatSelection: React.FC = () => {
       selectedPackages,
     };
     sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
-  };
-
-  const handlePackageToggle = (packageId: string) => {
-    const updatedPackages = selectedPackages.includes(packageId)
-      ? selectedPackages.filter((p) => p !== packageId)
-      : [...selectedPackages, packageId];
-
-    setSelectedPackages(updatedPackages);
-
-    const ticketData = {
-      selectedSeats,
-      totalPrice,
-      selectedPackages: updatedPackages,
-    };
-    sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
-  };
-
-  const handleClearSelection = () => {
-    setSelectedSeats([]);
-    setTotalPrice(0);
-    setSelectedPackages([]);
-
-    const ticketData = {
-      selectedSeats: [],
-      totalPrice: 0,
-      selectedPackages: [],
-    };
-    sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
-
-    notification.info({
-      message: "Seats Cleared",
-      description: "All selected seats have been cleared.",
-      duration: 2,
-    });
   };
 
   const scrollToTop = () => {

@@ -15,7 +15,7 @@ type CartItem = {
 };
 
 const MerchandiseSelection: React.FC = () => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(sessionStorage.getItem("merchCart") ? JSON.parse(sessionStorage.getItem("merchCart")!) : []);
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [activeVariantId, setActiveVariantId] = useState<string | null>(null);
   const [modalQty, setModalQty] = useState<number>(1);

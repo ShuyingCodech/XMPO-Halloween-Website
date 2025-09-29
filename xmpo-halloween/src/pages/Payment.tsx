@@ -253,7 +253,12 @@ const Payment: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate(-1);
+    const merchCartStr = sessionStorage.getItem("merchCart");
+    if (merchCartStr) {
+      navigate("/merch-selection");
+    } else {
+      navigate("/seat-selection");
+    }
     setTimeout(scrollToTop, 100);
   };
 
