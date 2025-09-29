@@ -155,7 +155,7 @@
 
 /* Updated selected seat color for dark mode */
 .seat.selected {
-  background-color: #34BF34;
+  background-color: #34bf34;
   border-color: #4a8a4a;
   font-weight: bold;
   color: #fff;
@@ -257,6 +257,40 @@
   border-radius: 6px;
   overflow: hidden;
   background-color: #2a2a2a;
+}
+
+.bundle-type-display {
+  margin-bottom: 1rem;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background-color: #2a2a2a;
+  padding: 0.5rem 0.75rem;
+}
+
+.ticket-type-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ticket-left {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #e0e0e0;
+}
+
+.ticket-right {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #e0e0e0;
+  white-space: nowrap;
+}
+
+.ticket-subtext {
+  font-size: 0.75rem;
+  color: #c0c0c0;
+  margin-top: 0.25rem;
+  text-align: left;
 }
 
 .ticket-type-header {

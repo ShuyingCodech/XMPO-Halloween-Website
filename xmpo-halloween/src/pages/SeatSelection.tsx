@@ -48,17 +48,45 @@ const SeatSelection: React.FC = () => {
   };
 
   const seatPrices = {
-    Deluxe: { original: 45, earlyBird: 40 },
-    Standard1: { original: 25, earlyBird: 20 },
-    Standard2: { original: 25, earlyBird: 20 },
+    Deluxe: {
+      original: 45,
+      earlyBird: 40,
+      bundleOriginal: 42, // 6 for RM252 (1 for RM42)
+      bundleEarlyBird: 42, // Same price for bundle
+    },
+    Standard1: {
+      original: 25,
+      earlyBird: 20,
+      bundleOriginal: 22, // 6 for RM132 (1 for RM22)
+      bundleEarlyBird: 22, // Same price for bundle
+    },
+    Standard2: {
+      original: 25,
+      earlyBird: 20,
+      bundleOriginal: 22, // 6 for RM132 (1 for RM22)
+      bundleEarlyBird: 22, // Same price for bundle
+    },
   };
 
-  // Function to get current price based on early bird status
-  const getCurrentPrice = (zoneType: string) => {
+  // Function to get current price based on early bird status and bundle eligibility
+  const getCurrentPrice = (zoneType: string, seatCount: number) => {
+    const isBundle = seatCount >= 6;
+
     if (zoneType === "Deluxe") {
+      if (isBundle) {
+        return isEarlyBird
+          ? seatPrices.Deluxe.bundleEarlyBird
+          : seatPrices.Deluxe.bundleOriginal;
+      }
       return isEarlyBird
         ? seatPrices.Deluxe.earlyBird
         : seatPrices.Deluxe.original;
+    }
+
+    if (isBundle) {
+      return isEarlyBird
+        ? seatPrices.Standard1.bundleEarlyBird
+        : seatPrices.Standard1.bundleOriginal;
     }
     return isEarlyBird
       ? seatPrices.Standard1.earlyBird
@@ -67,20 +95,15 @@ const SeatSelection: React.FC = () => {
 
   // Function to recalculate total price when early bird status changes
   const recalculatePrice = (seats: string[], earlyBirdStatus: boolean) => {
-    let total = 0;
-    seats.forEach((seatCode) => {
-      const zoneType = getZoneType(seatCode);
-      const price =
-        zoneType === "Deluxe"
-          ? earlyBirdStatus
-            ? seatPrices.Deluxe.earlyBird
-            : seatPrices.Deluxe.original
-          : earlyBirdStatus
-          ? seatPrices.Standard1.earlyBird
-          : seatPrices.Standard1.original;
-      total += price;
-    });
-    return total;
+    const { deluxe: deluxeSeats, normal: normalSeats } =
+      getSelectedSeatsByZone(seats);
+
+    const deluxePrice = getCurrentPrice("Deluxe", deluxeSeats.length);
+    const standardPrice = getCurrentPrice("Standard", normalSeats.length);
+
+    return (
+      deluxeSeats.length * deluxePrice + normalSeats.length * standardPrice
+    );
   };
 
   // Set up interval to check early bird status
@@ -126,12 +149,10 @@ const SeatSelection: React.FC = () => {
     return "Standard";
   };
 
-  // Group selected seats by zone type
-  const getSelectedSeatsByZone = () => {
-    const deluxeSeats = selectedSeats.filter(
-      (seat) => getZoneType(seat) === "Deluxe"
-    );
-    const normalSeats = selectedSeats.filter(
+  // Group selected seats by zone type - modified to accept seats parameter
+  const getSelectedSeatsByZone = (seats: string[] = selectedSeats) => {
+    const deluxeSeats = seats.filter((seat) => getZoneType(seat) === "Deluxe");
+    const normalSeats = seats.filter(
       (seat) => getZoneType(seat) === "Standard"
     );
 
@@ -349,21 +370,15 @@ const SeatSelection: React.FC = () => {
     const isSelected = selectedSeats.includes(seatCode);
 
     let updatedSeats;
-    let updatedPrice = totalPrice;
-
-    // Determine zone type and pricing based on current early bird status
-    const zoneType = getZoneType(seatCode);
-    const price = getCurrentPrice(zoneType);
-
     if (isSelected) {
       updatedSeats = selectedSeats.filter((s) => s !== seatCode);
-      updatedPrice -= price;
     } else {
       updatedSeats = [...selectedSeats, seatCode];
-      updatedPrice += price;
     }
 
-    // No validation here anymore - just update the selection
+    // Calculate new total price with bundle pricing
+    const updatedPrice = recalculatePrice(updatedSeats, isEarlyBird);
+
     setSelectedSeats(updatedSeats);
     setTotalPrice(updatedPrice);
 
@@ -613,17 +628,44 @@ const SeatSelection: React.FC = () => {
                       {formatSeatList(deluxeSeats)}
                     </div>
                   </div>
-                  <div className="price-display">
-                    {isEarlyBird && (
+
+                  {/* Bundle pricing for sets of 6 */}
+                  {Math.floor(deluxeSeats.length / 6) > 0 && (
+                    <div className="price-display">
                       <span className="original-price">
-                        RM{seatPrices.Deluxe.original}
+                        RM{seatPrices.Deluxe.bundleOriginal}
                       </span>
-                    )}
-                    <span className="current-price">
-                      RM{getCurrentPrice("Deluxe")}
-                    </span>
-                    <span className="quantity">x {deluxeSeats.length}</span>
-                  </div>
+                      <span className="current-price">
+                        RM
+                        {isEarlyBird
+                          ? seatPrices.Deluxe.bundleEarlyBird
+                          : seatPrices.Deluxe.bundleOriginal}
+                      </span>
+                      <span className="quantity">
+                        x {Math.floor(deluxeSeats.length / 6) * 6}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Regular pricing for remainder */}
+                  {deluxeSeats.length % 6 > 0 && (
+                    <div className="price-display">
+                      {isEarlyBird && (
+                        <span className="original-price">
+                          RM{seatPrices.Deluxe.original}
+                        </span>
+                      )}
+                      <span className="current-price">
+                        RM
+                        {isEarlyBird
+                          ? seatPrices.Deluxe.earlyBird
+                          : seatPrices.Deluxe.original}
+                      </span>
+                      <span className="quantity">
+                        x {deluxeSeats.length % 6}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -637,16 +679,77 @@ const SeatSelection: React.FC = () => {
                       {formatSeatList(normalSeats)}
                     </div>
                   </div>
-                  <div className="price-display">
-                    {isEarlyBird && (
+
+                  {/* Bundle pricing for sets of 6 */}
+                  {Math.floor(normalSeats.length / 6) > 0 && (
+                    <div className="price-display">
                       <span className="original-price">
-                        RM{seatPrices.Standard1.original}
+                        RM{seatPrices.Standard1.bundleOriginal}
                       </span>
-                    )}
-                    <span className="current-price">
-                      RM{getCurrentPrice("Standard")}
-                    </span>
-                    <span className="quantity">x {normalSeats.length}</span>
+                      <span className="current-price">
+                        RM
+                        {isEarlyBird
+                          ? seatPrices.Standard1.bundleEarlyBird
+                          : seatPrices.Standard1.bundleOriginal}
+                      </span>
+                      <span className="quantity">
+                        x {Math.floor(normalSeats.length / 6) * 6}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Regular pricing for remainder */}
+                  {normalSeats.length % 6 > 0 && (
+                    <div className="price-display">
+                      {isEarlyBird && (
+                        <span className="original-price">
+                          RM{seatPrices.Standard1.original}
+                        </span>
+                      )}
+                      <span className="current-price">
+                        RM
+                        {isEarlyBird
+                          ? seatPrices.Standard1.earlyBird
+                          : seatPrices.Standard1.original}
+                      </span>
+                      <span className="quantity">
+                        x {normalSeats.length % 6}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {deluxeSeats.length >= 6 && (
+                <div className="bundle-type-display">
+                  <div className="ticket-type-row">
+                    <div className="ticket-left">
+                      Deluxe Group Ticket Bundle
+                    </div>
+                    <div className="ticket-right">
+                      x {Math.floor(deluxeSeats.length / 6)}
+                    </div>
+                  </div>
+                  <div className="ticket-subtext">
+                    {Math.floor(deluxeSeats.length / 6) * 6} tickets for RM{" "}
+                    {Math.floor(deluxeSeats.length / 6) * 252}
+                  </div>
+                </div>
+              )}
+
+              {normalSeats.length >= 6 && (
+                <div className="bundle-type-display">
+                  <div className="ticket-type-row">
+                    <div className="ticket-left">
+                      Standard Group Ticket Bundle
+                    </div>
+                    <div className="ticket-right">
+                      x {Math.floor(normalSeats.length / 6)}
+                    </div>
+                  </div>
+                  <div className="ticket-subtext">
+                    {Math.floor(normalSeats.length / 6) * 6} tickets for RM{" "}
+                    {Math.floor(normalSeats.length / 6) * 132}
                   </div>
                 </div>
               )}

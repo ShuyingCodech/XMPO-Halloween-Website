@@ -669,13 +669,6 @@
   font-size: 1.1em;
 }
 
-.summary-divider {
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #ff8a00, transparent);
-  margin: 15px 0;
-  border-radius: 1px;
-}
-
 .grand-total {
   display: flex;
   justify-content: space-between;
