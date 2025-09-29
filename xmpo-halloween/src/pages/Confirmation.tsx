@@ -444,7 +444,7 @@ const Confirmation: React.FC = () => {
             <h6>Booking Summary</h6>
 
             <div className="summary-section">
-              <div className="summary-item">
+              <div className="summary-items">
                 <span>Selected Seats</span>
                 <span>{ticketData.selectedSeats.join(", ")}</span>
               </div>
@@ -452,7 +452,7 @@ const Confirmation: React.FC = () => {
 
             <div className="summary-section">
               {ticketData.seatTypes?.deluxe?.length > 0 && (
-                <div className="summary-item">
+                <div className="summary-items">
                   <span>Deluxe Tickets</span>
                   <span>
                     {ticketData.seatTypes.deluxe.length} × RM{" "}
@@ -465,7 +465,7 @@ const Confirmation: React.FC = () => {
                 </div>
               )}
               {ticketData.seatTypes?.normal?.length > 0 && (
-                <div className="summary-item">
+                <div className="summary-items">
                   <span>Standard Tickets</span>
                   <span>
                     {ticketData.seatTypes.normal.length} × RM{" "}
@@ -481,7 +481,7 @@ const Confirmation: React.FC = () => {
 
             {ticketData.selectedPackages?.length > 0 && (
               <div className="summary-section">
-                <div className="summary-item">
+                <div className="summary-items">
                   <span>Packages:</span>
                   <span>{ticketData.selectedPackages.join(", ")}</span>
                 </div>
@@ -490,7 +490,7 @@ const Confirmation: React.FC = () => {
 
             <div className="summary-divider"></div>
 
-            <div className="summary-item total">
+            <div className="summary-items total">
               <span>
                 <strong>Total Amount:</strong>
               </span>

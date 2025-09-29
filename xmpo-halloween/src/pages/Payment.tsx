@@ -4,7 +4,8 @@ import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import "../styles/payment.css";
 import { notification } from "antd";
-import { checkEarlyBirdStatus } from "../utils/common";
+import { checkEarlyBirdStatus, computePriceForProduct } from "../utils/common";
+import { PRODUCTS } from "../contants/Product";
 
 interface CartItem {
   type: string;
@@ -12,6 +13,13 @@ interface CartItem {
   quantity: number;
   unitPrice: number;
   price: number;
+  variant?: string;
+}
+
+interface MerchCartItem {
+  productId: string;
+  variantId?: string | null;
+  quantity: number;
 }
 
 const Payment: React.FC = () => {
@@ -60,6 +68,40 @@ const Payment: React.FC = () => {
     };
   };
 
+  // Function to get merchandise cart items
+  const getMerchandiseItems = (): CartItem[] => {
+    const merchCartStr = sessionStorage.getItem("merchCart");
+    if (!merchCartStr) return [];
+
+    try {
+      const merchCart: MerchCartItem[] = JSON.parse(merchCartStr);
+      const merchItems: CartItem[] = [];
+
+      merchCart.forEach((item) => {
+        const product = PRODUCTS.find((p) => p.id === item.productId);
+        if (!product) return;
+
+        const variant = product.variants?.find((v) => v.id === item.variantId);
+        const itemPrice = computePriceForProduct(product, item.quantity);
+        const unitPrice = computePriceForProduct(product, 1);
+
+        merchItems.push({
+          type: "merchandise",
+          name: product.name,
+          quantity: item.quantity,
+          unitPrice: unitPrice,
+          price: itemPrice,
+          variant: variant?.name,
+        });
+      });
+
+      return merchItems;
+    } catch (err) {
+      console.warn("Failed to parse merchCart", err);
+      return [];
+    }
+  };
+
   // Function to recalculate cart items and total based on current pricing
   const recalculateCartItems = (
     selectedSeats: string[],
@@ -68,6 +110,7 @@ const Payment: React.FC = () => {
     const items: CartItem[] = [];
     let newTotal = 0;
 
+    // Add ticket items
     if (selectedSeats && selectedSeats.length > 0) {
       const { deluxe: deluxeSeats, normal: normalSeats } =
         getSelectedSeatsByZone(selectedSeats);
@@ -100,6 +143,13 @@ const Payment: React.FC = () => {
         newTotal += standardSubtotal;
       }
     }
+
+    // Add merchandise items
+    const merchItems = getMerchandiseItems();
+    items.push(...merchItems);
+    merchItems.forEach((item) => {
+      newTotal += item.price;
+    });
 
     return { items, newTotal };
   };
@@ -184,6 +234,17 @@ const Payment: React.FC = () => {
           newTotal
         );
       }
+    } else {
+      // No ticket data, but might have merchandise
+      const merchItems = getMerchandiseItems();
+      if (merchItems.length > 0) {
+        setCartItems(merchItems);
+        const merchTotal = merchItems.reduce(
+          (sum, item) => sum + item.price,
+          0
+        );
+        setTotal(merchTotal);
+      }
     }
   }, []);
 
@@ -192,7 +253,7 @@ const Payment: React.FC = () => {
   };
 
   const handleBack = () => {
-    navigate("/seat-selection");
+    navigate(-1);
     setTimeout(scrollToTop, 100);
   };
 
@@ -203,6 +264,17 @@ const Payment: React.FC = () => {
     }
     navigate("/confirmation");
     setTimeout(scrollToTop, 100);
+  };
+
+  // Get image for cart item
+  const getItemImage = (item: CartItem) => {
+    if (item.type === "merchandise") {
+      const product = PRODUCTS.find((p) => p.name === item.name);
+      return product?.mainImage || "./images/placeholder.png";
+    }
+    return item.type === "normal"
+      ? "./images/normal-t.avif"
+      : "./images/deluxe-t.avif";
   };
 
   return (
@@ -224,16 +296,18 @@ const Payment: React.FC = () => {
               <div key={index} className={`receipt-item ${item.type}`}>
                 <div className="item-info">
                   <img
-                    src={
-                      item.type === "normal"
-                        ? "./images/normal-t.avif"
-                        : "./images/deluxe-t.avif"
-                    }
-                    alt={`${item.name} Ticket`}
+                    src={getItemImage(item)}
+                    alt={`${item.name}`}
                     className="item-image"
                   />
-                  <span className="item-name">{item.name}</span>
+                  <div className="item-text">
+                    <span className="item-name">{item.name}</span>
+                    {item.variant && (
+                      <span className="item-variant">{item.variant}</span>
+                    )}
+                  </div>
                 </div>
+
                 <div className="item-qty">{item.quantity}</div>
                 <div className="item-unit-price">RM {item.unitPrice}</div>
                 <div className="item-subtotal">RM {item.price}</div>

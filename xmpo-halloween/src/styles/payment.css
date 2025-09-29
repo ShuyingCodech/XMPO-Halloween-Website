@@ -59,6 +59,23 @@
   gap: 1rem;
 }
 
+.item-details {
+  display: flex;
+  flex-direction: row;
+}
+
+.item-text {
+  display: flex;
+  flex-direction: column; /* stack name + variant */
+  text-align: left;
+}
+
+.item-variant {
+  font-size: 0.85rem;
+  color: #aaa; /* lighter text to differentiate */
+  margin-top: 0.2rem;
+}
+
 .item-image {
   width: 60px;
   height: 80px;
@@ -483,6 +500,7 @@
   .item-unit-price,
   .item-subtotal {
     font-size: 0.75rem;
+    text-align: right;
   }
 
   .receipt-total {

@@ -51,7 +51,7 @@
   padding-bottom: 0.25rem;
 }
 
-.summary-item {
+.summary-items {
   display: grid;
   grid-template-columns: 1fr auto auto;
   align-items: center;
@@ -59,24 +59,24 @@
   gap: 1rem;
 }
 
-.summary-item:last-child {
+.summary-items:last-child {
   border-bottom: none;
 }
 
-.summary-item span:first-child {
+.summary-items span:first-child {
   color: #c0c0c0; /* Light gray text */
   font-weight: 500;
   justify-self: start;
 }
 
-.summary-item span:nth-child(2) {
+.summary-items span:nth-child(2) {
   color: #888; /* Darker gray text */
   font-size: 0.9rem;
   justify-self: start; /* This will align left */
   text-align: left;
 }
 
-.summary-item .item-total {
+.summary-items .item-total {
   font-weight: 600;
   font-size: 0.9rem;
   justify-self: end;
@@ -91,16 +91,16 @@
   border-radius: 1px;
 }
 
-.summary-item.total {
+.summary-items.total {
   margin-top: 0.5rem;
   grid-template-columns: 1fr auto; /* Only 2 columns for total */
 }
 
-.summary-item.total span {
+.summary-items.total span {
   color: #e0e0e0; /* Light text */
 }
 
-.summary-item.total span:last-child {
+.summary-items.total span:last-child {
   color: #ff8a00;
   font-weight: bold; /* Make total price bold */
   font-size: 1.1rem; /* Slightly larger for emphasis */
@@ -278,17 +278,17 @@
     padding: 1rem;
   }
 
-  .summary-item {
+  .summary-items {
     grid-template-columns: 1fr;
     gap: 0.25rem;
   }
 
-  .summary-item span:nth-child(2),
-  .summary-item .item-total {
+  .summary-items span:nth-child(2),
+  .summary-items .item-total {
     justify-self: end;
   }
 
-  .summary-item.total {
+  .summary-items.total {
     grid-template-columns: 1fr auto;
     align-items: center;
   }
@@ -321,12 +321,12 @@
     font-size: 1rem;
   }
 
-  .summary-item {
+  .summary-items {
     padding: 0.4rem 0;
     font-size: 0.9rem;
   }
 
-  .summary-item.total {
+  .summary-items.total {
     font-size: 1rem;
     padding: 0.8rem;
   }

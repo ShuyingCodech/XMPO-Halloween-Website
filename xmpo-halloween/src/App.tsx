@@ -7,6 +7,7 @@ import Confirmation from "./pages/Confirmation";
 import Home from "./pages/Home";
 import Admin from "./pages/Admin";
 import Success from "./pages/Success";
+import MerchandiseSelection from "./pages/MerchandiseSelection";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/confirmation" element={<Confirmation />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/success" element={<Success />} />
+          <Route path="/merch-selection" element={<MerchandiseSelection />} />
         </Routes>
       </div>
     </Router>
