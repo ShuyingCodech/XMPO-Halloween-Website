@@ -17,7 +17,7 @@ const SeatSelection: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [totalPrice, setTotalPrice] = useState(0);
   const [selectedPackages, setSelectedPackages] = useState<string[]>([]);
-  const [isEarlyBird, setIsEarlyBird] = useState(true);
+  const [isEarlyBird, setIsEarlyBird] = useState(false);
   const navigate = useNavigate();
 
   const seatCounts = {
@@ -112,11 +112,9 @@ const SeatSelection: React.FC = () => {
     //   const newEarlyBirdStatus = checkEarlyBirdStatus();
     //   if (newEarlyBirdStatus !== isEarlyBird) {
     //     setIsEarlyBird(newEarlyBirdStatus);
-
     //     // Recalculate price with new status
     //     const newPrice = recalculatePrice(selectedSeats, newEarlyBirdStatus);
     //     setTotalPrice(newPrice);
-
     //     // Update session storage
     //     const ticketData = {
     //       selectedSeats,
@@ -126,13 +124,10 @@ const SeatSelection: React.FC = () => {
     //     sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
     //   }
     // };
-
     // // Check immediately
     // updateEarlyBirdStatus();
-
     // Check every minute
     // const interval = setInterval(updateEarlyBirdStatus, 60000);
-
     // return () => clearInterval(interval);
   }, [isEarlyBird, selectedSeats, selectedPackages]);
 

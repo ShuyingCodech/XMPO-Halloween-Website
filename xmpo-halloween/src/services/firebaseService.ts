@@ -13,14 +13,20 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { firestore, imageStorage } from "../firebase";
+import { MERCHANDISE_INVENTORY } from "../contants/MerchandiseInventory";
+import { PRODUCTS } from "../contants/Product";
 
-// Types
+interface MerchQuantityCheck {
+  productId: string;
+  variantId?: string | null;
+  quantity: number;
+}
+
 export interface BookingData {
   name: string;
   studentId?: string;
   email: string;
   contactNo: string;
-  receiptUrl?: string;
   selectedSeats: string[];
   seatTypes: {
     deluxe: string[];
@@ -28,6 +34,15 @@ export interface BookingData {
   };
   totalPrice: number;
   selectedPackages: string[];
+  merchandise?: Array<{
+    productId: string;
+    productName: string;
+    variantId?: string | null;
+    variantName?: string | null;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
 }
 
 export interface ReservedSeat {
@@ -104,10 +119,14 @@ export const createBooking = async (
   receiptFile?: File
 ): Promise<{ bookingId: string; receiptUrl?: string }> => {
   try {
-    // Step 1: Check seat availability
-    const isAvailable = await checkSeatsAvailability(bookingData.selectedSeats);
-    if (!isAvailable) {
-      throw new Error("One or more selected seats are no longer available");
+    // Step 1: Check seat availability (only if seats were selected)
+    if (bookingData.selectedSeats.length > 0) {
+      const isAvailable = await checkSeatsAvailability(
+        bookingData.selectedSeats
+      );
+      if (!isAvailable) {
+        throw new Error("One or more selected seats are no longer available");
+      }
     }
 
     // Step 2: Create booking document
@@ -130,25 +149,27 @@ export const createBooking = async (
       });
     }
 
-    // Step 4: Reserve the seats
-    const seatReservations: Omit<ReservedSeat, "reservedAt">[] =
-      bookingData.selectedSeats.map((seatCode) => ({
-        seatCode,
-        isReserved: true,
-        bookingId: bookingRef.id,
-        status: "pending" as const,
-        customerEmail: bookingData.email,
-      }));
+    // Step 4: Reserve the seats (only if seats were selected)
+    if (bookingData.selectedSeats.length > 0) {
+      const seatReservations: Omit<ReservedSeat, "reservedAt">[] =
+        bookingData.selectedSeats.map((seatCode) => ({
+          seatCode,
+          isReserved: true,
+          bookingId: bookingRef.id,
+          status: "pending" as const,
+          customerEmail: bookingData.email,
+        }));
 
-    // Add reserved seats to collection
-    const reservationPromises = seatReservations.map((reservation) =>
-      addDoc(collection(firestore, "reserved_seats"), {
-        ...reservation,
-        reservedAt: serverTimestamp(),
-      })
-    );
+      // Add reserved seats to collection
+      const reservationPromises = seatReservations.map((reservation) =>
+        addDoc(collection(firestore, "reserved_seats"), {
+          ...reservation,
+          reservedAt: serverTimestamp(),
+        })
+      );
 
-    await Promise.all(reservationPromises);
+      await Promise.all(reservationPromises);
+    }
 
     return {
       bookingId: bookingRef.id,
@@ -274,5 +295,172 @@ export const cleanupExpiredBookings = async (
   } catch (error) {
     console.error("Error cleaning up expired bookings:", error);
     throw error;
+  }
+};
+
+// Check merchandise availability including bundle decomposition
+export const checkMerchandiseAvailability = async (
+  items: MerchQuantityCheck[]
+): Promise<{ available: boolean; unavailableItems: string[] }> => {
+  try {
+    const unavailableItems: string[] = [];
+
+    // Get all bookings with merchandise
+    const bookingsSnapshot = await getDocs(collection(firestore, "bookings"));
+
+    // Calculate current sold quantities for each product/variant
+    const soldQuantities = new Map<string, number>();
+
+    bookingsSnapshot.forEach((doc) => {
+      const booking = doc.data();
+      if (booking.merchandise && Array.isArray(booking.merchandise)) {
+        booking.merchandise.forEach((item: any) => {
+          // Decompose bundles into their components
+          if (item.productId === "bundle") {
+            // Each bundle = 1 keychain + 1 drawstring bag of chosen variant
+            const keychainKey = "keychain-null";
+            const bagKey = `drawstring-bag-${item.variantId || "null"}`;
+
+            soldQuantities.set(
+              keychainKey,
+              (soldQuantities.get(keychainKey) || 0) + item.quantity
+            );
+            soldQuantities.set(
+              bagKey,
+              (soldQuantities.get(bagKey) || 0) + item.quantity
+            );
+          } else {
+            const key = `${item.productId}-${item.variantId || "null"}`;
+            soldQuantities.set(
+              key,
+              (soldQuantities.get(key) || 0) + item.quantity
+            );
+          }
+        });
+      }
+    });
+
+    // Decompose items to check (including bundles)
+    const decomposedItems: MerchQuantityCheck[] = [];
+
+    items.forEach((item) => {
+      if (item.productId === "bundle") {
+        // Each bundle needs 1 keychain and 1 bag
+        decomposedItems.push({
+          productId: "keychain",
+          variantId: null,
+          quantity: item.quantity,
+        });
+        decomposedItems.push({
+          productId: "drawstring",
+          variantId: item.variantId, // The variant chosen for the bag
+          quantity: item.quantity,
+        });
+      } else {
+        decomposedItems.push(item);
+      }
+    });
+
+    // Group decomposed items by product+variant
+    const groupedItems = new Map<string, MerchQuantityCheck>();
+    decomposedItems.forEach((item) => {
+      const key = `${item.productId}-${item.variantId || "null"}`;
+      const existing = groupedItems.get(key);
+      if (existing) {
+        existing.quantity += item.quantity;
+      } else {
+        groupedItems.set(key, { ...item });
+      }
+    });
+
+    // Check each item against inventory limits
+    for (const [key, item] of Array.from(groupedItems.entries())) {
+      const inventoryItem = MERCHANDISE_INVENTORY.find(
+        (inv) =>
+          inv.productId === item.productId &&
+          (inv.variantId || null) === (item.variantId || null)
+      );
+
+      if (!inventoryItem) {
+        console.warn(`No inventory limit found for ${key}`);
+        continue;
+      }
+
+      const currentSold = soldQuantities.get(key) || 0;
+      const requestedTotal = currentSold + item.quantity;
+
+      if (requestedTotal > inventoryItem.maxQuantity) {
+        const product = PRODUCTS.find((p) => p.id === item.productId);
+        const variant = product?.variants?.find((v) => v.id === item.variantId);
+        const itemName = variant
+          ? `${product?.name} (${variant.name})`
+          : product?.name || item.productId;
+
+        const remaining = Math.max(0, inventoryItem.maxQuantity - currentSold);
+        unavailableItems.push(
+          `${itemName} `
+        );
+      }
+    }
+
+    return {
+      available: unavailableItems.length === 0,
+      unavailableItems,
+    };
+  } catch (error) {
+    console.error("Error checking merchandise availability:", error);
+    throw error;
+  }
+};
+
+// Get remaining stock for a specific item (also accounting for bundles)
+export const getRemainingStock = async (
+  productId: string,
+  variantId?: string | null
+): Promise<number> => {
+  try {
+    const inventoryItem = MERCHANDISE_INVENTORY.find(
+      (inv) =>
+        inv.productId === productId &&
+        (inv.variantId || null) === (variantId || null)
+    );
+
+    if (!inventoryItem) {
+      return 999; // No limit set
+    }
+
+    const bookingsSnapshot = await getDocs(collection(firestore, "bookings"));
+    let soldQuantity = 0;
+
+    bookingsSnapshot.forEach((doc) => {
+      const booking = doc.data();
+      if (booking.merchandise && Array.isArray(booking.merchandise)) {
+        booking.merchandise.forEach((item: any) => {
+          // Check if this is a bundle that uses this product
+          if (item.productId === "bundle") {
+            if (productId === "keychain" && variantId === null) {
+              // Bundle uses 1 keychain
+              soldQuantity += item.quantity;
+            } else if (
+              productId === "drawstring-bag" &&
+              item.variantId === variantId
+            ) {
+              // Bundle uses 1 bag of the selected variant
+              soldQuantity += item.quantity;
+            }
+          } else if (
+            item.productId === productId &&
+            (item.variantId || null) === (variantId || null)
+          ) {
+            soldQuantity += item.quantity;
+          }
+        });
+      }
+    });
+
+    return Math.max(0, inventoryItem.maxQuantity - soldQuantity);
+  } catch (error) {
+    console.error("Error getting remaining stock:", error);
+    return 0;
   }
 };

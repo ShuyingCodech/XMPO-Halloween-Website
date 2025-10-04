@@ -28,6 +28,15 @@ interface BookingDetails {
   receiptUrl: string;
   createdAt: any;
   redeemed: boolean;
+  merchandise?: Array<{
+    productId: string;
+    productName: string;
+    variantId?: string | null;
+    variantName?: string;
+    quantity: number;
+    unitPrice: number;
+    totalPrice: number;
+  }>;
 }
 
 interface SalesStats {
@@ -575,9 +584,44 @@ const Admin: React.FC = () => {
                       </td>
                       <td>
                         <div className="packages">
-                          {booking.selectedPackages?.length > 0
-                            ? booking.selectedPackages.join(", ")
-                            : "None"}
+                          {/* Packages */}
+                          {booking.selectedPackages?.length > 0 && (
+                            <div className="packages-section">
+                              <strong>Packages:</strong>
+                              <div className="packages">
+                                {booking.selectedPackages.join(", ")}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Merchandise */}
+                          {booking.merchandise &&
+                            booking.merchandise.length > 0 && (
+                              <div className="merchandise-list">
+                                <div>
+                                  {booking.merchandise.map((item, idx) => (
+                                    <div key={idx} className="merch-items">
+                                      <span>
+                                        {item.productName}
+                                        {item.variantName &&
+                                          ` (${item.variantName})`}
+                                        :{" "}
+                                      </span>
+                                      <span>
+                                        {item.quantity} × RM {item.unitPrice}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                          {(!booking.selectedPackages ||
+                            booking.selectedPackages.length === 0) &&
+                            (!booking.merchandise ||
+                              booking.merchandise.length === 0) && (
+                              <span className="no-items">None</span>
+                            )}
                         </div>
                       </td>
                       <td className="amount">

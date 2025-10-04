@@ -235,6 +235,30 @@ const Confirmation: React.FC = () => {
     }
   };
 
+  // Helper function to convert merchCart to merchandise array
+  const convertMerchCartToMerchandise = (merchCart: MerchCartItem[]) => {
+    return merchCart
+      .map((item) => {
+        const product = PRODUCTS.find((p) => p.id === item.productId);
+        if (!product) return null;
+
+        const variant = product.variants?.find((v) => v.id === item.variantId);
+        const unitPrice = computePriceForProduct(product, 1);
+        const totalPrice = computePriceForProduct(product, item.quantity);
+
+        return {
+          productId: item.productId,
+          productName: product.name,
+          variantId: item.variantId || null,
+          variantName: variant?.name,
+          quantity: item.quantity,
+          unitPrice,
+          totalPrice,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  };
+
   useEffect(() => {
     // Initial pricing status check
     updatePricingStatus();
@@ -428,12 +452,45 @@ const Confirmation: React.FC = () => {
         }
       }
 
-      // Prepare booking data according to the BookingData interface
+      // Get merchandise cart
+      const merchCartStr = sessionStorage.getItem("merchCart");
+      const merchCart: MerchCartItem[] = merchCartStr
+        ? JSON.parse(merchCartStr)
+        : [];
+
+      // Convert merchandise cart to proper format
+      const merchandiseData =
+        merchCart.length > 0
+          ? merchCart
+              .map((item) => {
+                const product = PRODUCTS.find((p) => p.id === item.productId);
+                if (!product) return null;
+
+                const variant = product.variants?.find(
+                  (v) => v.id === item.variantId
+                );
+                const unitPrice = computePriceForProduct(product, 1);
+                const totalPrice = computePriceForProduct(
+                  product,
+                  item.quantity
+                );
+
+                return {
+                  productId: item.productId,
+                  productName: product.name,
+                  variantId: item.variantId || null,
+                  variantName: variant?.name ?? null,
+                  quantity: item.quantity,
+                  unitPrice,
+                  totalPrice,
+                };
+              })
+              .filter((item): item is NonNullable<typeof item> => item !== null)
+          : [];
+
+      // Prepare booking data - only add merchandise if it exists
       const bookingData: BookingData = {
         name: formData.name.trim(),
-        ...(formData.studentId.trim() && {
-          studentId: formData.studentId.trim(),
-        }),
         email: formData.email.trim().toLowerCase(),
         contactNo: formData.contactNo.trim(),
         selectedSeats: ticketData.selectedSeats,
@@ -441,6 +498,15 @@ const Confirmation: React.FC = () => {
         totalPrice: ticketData.totalPrice,
         selectedPackages: ticketData.selectedPackages,
       };
+
+      // Only add optional fields if they have values
+      if (formData.studentId.trim()) {
+        bookingData.studentId = formData.studentId.trim();
+      }
+
+      if (merchandiseData.length > 0) {
+        bookingData.merchandise = merchandiseData;
+      }
 
       // Create booking with payment receipt
       const result = await createBooking(

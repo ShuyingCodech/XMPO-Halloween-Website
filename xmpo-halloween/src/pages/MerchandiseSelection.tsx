@@ -7,6 +7,7 @@ import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import { Product, PRODUCTS } from "../contants/Product";
 import { computePriceForProduct } from "../utils/common";
+import { checkMerchandiseAvailability } from "../services/firebaseService";
 
 type CartItem = {
   productId: string;
@@ -15,7 +16,11 @@ type CartItem = {
 };
 
 const MerchandiseSelection: React.FC = () => {
-  const [cart, setCart] = useState<CartItem[]>(sessionStorage.getItem("merchCart") ? JSON.parse(sessionStorage.getItem("merchCart")!) : []);
+  const [cart, setCart] = useState<CartItem[]>(
+    sessionStorage.getItem("merchCart")
+      ? JSON.parse(sessionStorage.getItem("merchCart")!)
+      : []
+  );
   const [activeProduct, setActiveProduct] = useState<Product | null>(null);
   const [activeVariantId, setActiveVariantId] = useState<string | null>(null);
   const [modalQty, setModalQty] = useState<number>(1);
@@ -23,6 +28,7 @@ const MerchandiseSelection: React.FC = () => {
     undefined
   );
   const navigate = useNavigate();
+  const [checkingInventory, setCheckingInventory] = useState(false);
 
   /* Load cart from session storage on mount */
   useEffect(() => {
@@ -160,7 +166,7 @@ const MerchandiseSelection: React.FC = () => {
     }
   };
 
-  const handleProceedToCheckout = () => {
+  const handleProceedToCheckout = async (nav: string) => {
     if (cart.length === 0) {
       notification.error({
         message: "Cart is empty",
@@ -169,10 +175,51 @@ const MerchandiseSelection: React.FC = () => {
       });
       return;
     }
-    // Save and navigate to your checkout route
-    sessionStorage.setItem("merchCart", JSON.stringify(cart));
-    navigate("/payment");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    setCheckingInventory(true);
+
+    try {
+      // Check inventory availability
+      const itemsToCheck = cart.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId || null,
+        quantity: item.quantity,
+      }));
+
+      const { available, unavailableItems } =
+        await checkMerchandiseAvailability(itemsToCheck);
+
+      if (!available) {
+        notification.error({
+          message: "The following item(s) are out of stock",
+          description: (
+            <div>
+              <ul>
+                {unavailableItems.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ),
+          duration: 8,
+        });
+        return;
+      }
+
+      // If available, proceed to checkout
+      sessionStorage.setItem("merchCart", JSON.stringify(cart));
+      navigate(nav);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (error) {
+      console.error("Error checking inventory:", error);
+      notification.error({
+        message: "Error",
+        description: "Unable to verify stock availability. Please try again.",
+        duration: 5,
+      });
+    } finally {
+      setCheckingInventory(false);
+    }
   };
 
   /* ---------- Render ---------- */
@@ -308,14 +355,14 @@ const MerchandiseSelection: React.FC = () => {
 
               <button
                 className="checkout-btn"
-                disabled={cart.length === 0}
-                onClick={handleProceedToCheckout}
+                disabled={cart.length === 0 || checkingInventory}
+                onClick={() => handleProceedToCheckout("/payment")}
               >
                 Continue to Payment
               </button>
               <button
                 className="clear-cart-btn"
-                onClick={() => navigate("/seat-selection")}
+                onClick={() => handleProceedToCheckout("/seat-selection")}
               >
                 To Ticket Selection
               </button>

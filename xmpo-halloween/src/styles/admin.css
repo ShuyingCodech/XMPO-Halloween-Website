@@ -183,13 +183,15 @@
   min-width: 200px;
 }
 
-.seats-list {
+.seats-list,
+.merchandise-list {
   font-weight: 500;
   margin-bottom: 8px;
   color: #e0e0e0;
 }
 
-.seat-type {
+.seat-type,
+.merch-items {
   font-size: 12px;
   color: #c0c0c0;
   margin-bottom: 2px;
