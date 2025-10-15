@@ -1,4 +1,5 @@
 import { Product } from "../contants/Product";
+import { CartItem } from "../pages/MerchandiseSelection";
 
 // Function to check if current time is still in early bird period
 export const checkEarlyBirdStatus = (): boolean => {
@@ -17,7 +18,10 @@ export const checkEarlyBirdStatus = (): boolean => {
  * @param qty number
  * @returns total price (number)
  */
-export const computePriceForProduct = (product: Product, qty: number): number => {
+export const computePriceForProduct = (
+  product: Product,
+  qty: number
+): number => {
   if (qty <= 0) return 0;
 
   // Sort packs by count descending so we use the largest packs first.
@@ -52,6 +56,50 @@ export const computePriceForProduct = (product: Product, qty: number): number =>
       const sets = Math.ceil(remaining / smallest.count);
       total += sets * smallest.price;
       remaining = 0;
+    }
+  }
+
+  return total;
+};
+
+/**
+ * Calculate cart total with cross-variant pack pricing.
+ * For products with variants, quantities are aggregated across all variants
+ * before applying pack pricing.
+ *
+ * @param cart CartItem[]
+ * @param products Product[]
+ * @returns total price (number)
+ */
+export const computeCartTotal = (
+  cart: CartItem[],
+  products: Product[]
+): number => {
+  // Group cart items by productId
+  const productGroups = cart.reduce((acc, item) => {
+    if (!acc[item.productId]) {
+      acc[item.productId] = [];
+    }
+    acc[item.productId].push(item);
+    return acc;
+  }, {} as Record<string, CartItem[]>);
+
+  let total = 0;
+
+  // Calculate price for each product group
+  for (const [productId, items] of Object.entries(productGroups)) {
+    const product = products.find((p) => p.id === productId);
+    if (!product) continue;
+
+    // If product has variants, aggregate total quantity across all variants
+    if (product.variants && product.variants.length > 0) {
+      const totalQty = items.reduce((sum, item) => sum + item.quantity, 0);
+      total += computePriceForProduct(product, totalQty);
+    } else {
+      // No variants, calculate normally
+      for (const item of items) {
+        total += computePriceForProduct(product, item.quantity);
+      }
     }
   }
 

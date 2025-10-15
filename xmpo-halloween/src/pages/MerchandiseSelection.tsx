@@ -6,10 +6,10 @@ import "../styles/common.css";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import { Product, PRODUCTS } from "../contants/Product";
-import { computePriceForProduct } from "../utils/common";
+import { computePriceForProduct, computeCartTotal } from "../utils/common";
 import { checkMerchandiseAvailability } from "../services/firebaseService";
 
-type CartItem = {
+export type CartItem = {
   productId: string;
   variantId?: string | null;
   quantity: number;
@@ -111,12 +111,8 @@ const MerchandiseSelection: React.FC = () => {
   };
 
   const cartTotal = () => {
-    return cart.reduce((sum, it) => {
-      const product = PRODUCTS.find((p) => p.id === it.productId);
-      if (!product) return sum;
-      return sum + computePriceForProduct(product, it.quantity);
-    }, 0);
-  };
+  return computeCartTotal(cart, PRODUCTS);
+};
 
   /* ---------- Modal handlers ---------- */
   const openProductModal = (product: Product) => {
@@ -167,47 +163,47 @@ const MerchandiseSelection: React.FC = () => {
   };
 
   const handleProceedToCheckout = async (nav: string) => {
-    if (cart.length === 0) {
-      notification.error({
-        message: "Cart is empty",
-        description:
-          "Please add at least one merchandise item before proceeding.",
-      });
+    if (nav == "/seat-selection") {
+      // Just navigate back to seat selection without checks
+      navigate(nav);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
     setCheckingInventory(true);
 
     try {
-      // Check inventory availability
-      const itemsToCheck = cart.map((item) => ({
-        productId: item.productId,
-        variantId: item.variantId || null,
-        quantity: item.quantity,
-      }));
+      if (cart.length != 0) {
+        // Check inventory availability
+        const itemsToCheck = cart.map((item) => ({
+          productId: item.productId,
+          variantId: item.variantId || null,
+          quantity: item.quantity,
+        }));
 
-      const { available, unavailableItems } =
-        await checkMerchandiseAvailability(itemsToCheck);
+        const { available, unavailableItems } =
+          await checkMerchandiseAvailability(itemsToCheck);
 
-      if (!available) {
-        notification.error({
-          message: "The following item(s) are out of stock",
-          description: (
-            <div>
-              <ul>
-                {unavailableItems.map((item, idx) => (
-                  <li key={idx}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          ),
-          duration: 8,
-        });
-        return;
+        if (!available) {
+          notification.error({
+            message: "The following item(s) are out of stock",
+            description: (
+              <div>
+                <ul>
+                  {unavailableItems.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ),
+            duration: 8,
+          });
+          return;
+        }
+
+        // If available, proceed to checkout
+        sessionStorage.setItem("merchCart", JSON.stringify(cart));
       }
-
-      // If available, proceed to checkout
-      sessionStorage.setItem("merchCart", JSON.stringify(cart));
       navigate(nav);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
@@ -355,7 +351,7 @@ const MerchandiseSelection: React.FC = () => {
 
               <button
                 className="checkout-btn"
-                disabled={cart.length === 0 || checkingInventory}
+                // disabled={cart.length === 0 || checkingInventory}
                 onClick={() => handleProceedToCheckout("/payment")}
               >
                 Continue to Payment
@@ -364,7 +360,7 @@ const MerchandiseSelection: React.FC = () => {
                 className="clear-cart-btn"
                 onClick={() => handleProceedToCheckout("/seat-selection")}
               >
-                To Ticket Selection
+                Back to Ticket Selection
               </button>
             </div>
           </div>

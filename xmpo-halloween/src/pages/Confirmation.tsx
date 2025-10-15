@@ -11,17 +11,23 @@ import {
   checkSeatsAvailability,
   createBooking,
 } from "../services/firebaseService";
-import { checkEarlyBirdStatus, computePriceForProduct } from "../utils/common";
+import { computePriceForProduct, computeCartTotal } from "../utils/common";
 import { PRODUCTS } from "../contants/Product";
+
+interface TicketItem {
+  type: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  price: number;
+}
 
 interface TicketData {
   selectedSeats: string[];
   totalPrice: number;
   selectedPackages: string[];
-  seatTypes: {
-    deluxe: string[];
-    normal: string[];
-  };
+  ticketItems: TicketItem[];
+  isEarlyBird: boolean;
 }
 
 interface MerchCartItem {
@@ -38,39 +44,45 @@ interface MerchDisplayItem {
   totalPrice: number;
 }
 
-// Pricing configuration
-const PRICING = {
-  earlyBird: {
-    deluxe: 40,
-    normal: 20,
-  },
-  normal: {
-    deluxe: 45,
-    normal: 25,
-  },
-};
-
 // Initialize EmailJS (do this once in your app)
 emailjs.init("DytKDFiXjf6QbWru_"); // Get this from EmailJS dashboard
 
 // Email service function using EmailJS
+// Updated Email service function using EmailJS
 const sendBookingConfirmationEmail = async (bookingData: any) => {
   try {
-    // Determine zone based on seats
+    // Get zone information from ticket items
+    const hasDeluxe = bookingData.ticketItems?.some(
+      (item: TicketItem) => item.type === "deluxe"
+    );
+    const hasStandard = bookingData.ticketItems?.some(
+      (item: TicketItem) => item.type === "normal"
+    );
+
     let zones = [];
-    if (bookingData.seatTypes.deluxe?.length > 0) zones.push("Deluxe");
-    if (bookingData.seatTypes.normal?.length > 0) zones.push("Standard");
+    if (hasDeluxe) zones.push("Deluxe");
+    if (hasStandard) zones.push("Standard");
     const zoneText = zones.join(", ");
 
     // Format merchandise info for email
-    let merchInfo = "No merchandise";
+    let merchInfo = "-";
     if (bookingData.merchandise && bookingData.merchandise.length > 0) {
       merchInfo = bookingData.merchandise
-        .map((item: MerchDisplayItem) => {
+        .map((item: MerchDisplayItem, index: number) => {
           const variantText = item.variant ? ` (${item.variant})` : "";
-          return `${item.name}${variantText} x${item.quantity} - RM${item.totalPrice}`;
+          return `${index + 1}. ${item.name}${variantText} x ${
+            item.quantity
+          } - RM${item.totalPrice}`;
         })
         .join("\n");
+    }
+
+    // Format ticket info for email
+    let ticketInfo = "-";
+    if (bookingData.selectedSeats && bookingData.selectedSeats.length > 0) {
+      ticketInfo = `<span style="color:#ff8a00;"><strong>Zone:</strong></span> ${zoneText}<br><span style="color:#ff8a00;"><strong>Seats Selected:</strong></span> ${bookingData.selectedSeats.join(
+        ", "
+      )}`;
     }
 
     // Prepare template parameters
@@ -78,20 +90,30 @@ const sendBookingConfirmationEmail = async (bookingData: any) => {
       to_name: bookingData.name,
       to_email: bookingData.email,
       customer_name: bookingData.name,
-      student_id: bookingData.studentId || "N/A",
-      contact_no: bookingData.contactNo,
+      booking_id: bookingData.bookingId || "N/A",
+
+      // Purchase Details
       zone: zoneText,
       selected_seats: bookingData.selectedSeats.join(", "),
+      ticket_info: ticketInfo,
       merchandise: merchInfo,
       total_price: bookingData.totalPrice,
-      booking_id: bookingData.bookingId || "N/A",
-      // Concert details (static)
+
+      // Collection Details
+      collection_dates: `27/10, Mon - 7pm - 10pm - Spookydadoo Booth, B1 1st floor near B1-101 Multipurpose Hall
+28/10, Tue - 6pm - 8pm - B1 Ground Floor, in front of Astana
+29/10, Wed - 6pm - 8pm - B1 Ground Floor, in front of Astana
+30/10, Thu - 6pm - 8pm - B1 Ground Floor, in front of Astana
+Concert Day 1/11, Sat - 6pm - 6.50pm - Tan Hua Choon Auditorium Lobby`,
+
+      // Concert details
       concert_title:
         '"Nightmare on Symphony Street" - A Chamber Orchestra Concert',
       concert_date: "1st Nov 2025 (Saturday)",
       concert_times: `6.00pm, Hall Open
 7.00pm, Concert Starts`,
       venue: "Tan Hua Choon Auditorium, Xiamen University Malaysia",
+
       // Contact information
       contact_1: "TEE ZHI YEN: 011-51110830 (OC)",
       contact_2: "KHOO LI LING: 017-2009299 (VOC)",
@@ -101,8 +123,8 @@ const sendBookingConfirmationEmail = async (bookingData: any) => {
     };
 
     const result = await emailjs.send(
-      "service_eze2a64", // Get from EmailJS dashboard
-      "template_msy2i8d", // Create template in EmailJS dashboard
+      "service_eze2a64", // Your EmailJS service ID
+      "template_msy2i8d", // Your EmailJS template ID
       templateParams
     );
 
@@ -120,8 +142,6 @@ const Confirmation: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [ticketData, setTicketData] = useState<TicketData | null>(null);
   const [merchItems, setMerchItems] = useState<MerchDisplayItem[]>([]);
-  const [isEarlyBird, setIsEarlyBird] = useState<boolean>(true);
-  const [currentPricing, setCurrentPricing] = useState(PRICING.earlyBird);
   const [formData, setFormData] = useState({
     name: "",
     studentId: "",
@@ -187,82 +207,21 @@ const Confirmation: React.FC = () => {
 
   // Function to calculate merchandise total
   const calculateMerchTotal = (items: MerchDisplayItem[]): number => {
-    return items.reduce((sum, item) => sum + item.totalPrice, 0);
-  };
+    // Use the actual cross-variant pricing from session storage
+    const merchCartStr = sessionStorage.getItem("merchCart");
+    if (!merchCartStr) return 0;
 
-  // Function to recalculate total price based on current pricing
-  const recalculatePrice = (
-    seatTypes: {
-      deluxe: string[];
-      normal: string[];
-    },
-    merchTotal: number
-  ) => {
-    const pricing = checkEarlyBirdStatus() ? PRICING.earlyBird : PRICING.normal;
-    const deluxeCount = seatTypes.deluxe?.length || 0;
-    const normalCount = seatTypes.normal?.length || 0;
-
-    const ticketTotal =
-      deluxeCount * pricing.deluxe + normalCount * pricing.normal;
-    return ticketTotal + merchTotal;
-  };
-
-  // Function to check and update pricing status
-  const updatePricingStatus = () => {
-    const currentIsEarlyBird = checkEarlyBirdStatus();
-    const newPricing = currentIsEarlyBird ? PRICING.earlyBird : PRICING.normal;
-
-    setIsEarlyBird(currentIsEarlyBird);
-    setCurrentPricing(newPricing);
-
-    // Update ticket data with new pricing if it exists
-    if (ticketData) {
-      const merchTotal = calculateMerchTotal(merchItems);
-      const newTotalPrice = recalculatePrice(ticketData.seatTypes, merchTotal);
-
-      // Only update if price changed
-      if (newTotalPrice !== ticketData.totalPrice) {
-        const updatedTicketData = {
-          ...ticketData,
-          totalPrice: newTotalPrice,
-        };
-
-        setTicketData(updatedTicketData);
-
-        // Update session storage with new pricing
-        sessionStorage.setItem("ticketData", JSON.stringify(updatedTicketData));
-      }
+    try {
+      const merchCart: MerchCartItem[] = JSON.parse(merchCartStr);
+      return computeCartTotal(merchCart, PRODUCTS);
+    } catch (err) {
+      console.warn("Failed to calculate merch total", err);
+      // Fallback to summing display items
+      return items.reduce((sum, item) => sum + item.totalPrice, 0);
     }
   };
 
-  // Helper function to convert merchCart to merchandise array
-  const convertMerchCartToMerchandise = (merchCart: MerchCartItem[]) => {
-    return merchCart
-      .map((item) => {
-        const product = PRODUCTS.find((p) => p.id === item.productId);
-        if (!product) return null;
-
-        const variant = product.variants?.find((v) => v.id === item.variantId);
-        const unitPrice = computePriceForProduct(product, 1);
-        const totalPrice = computePriceForProduct(product, item.quantity);
-
-        return {
-          productId: item.productId,
-          productName: product.name,
-          variantId: item.variantId || null,
-          variantName: variant?.name,
-          quantity: item.quantity,
-          unitPrice,
-          totalPrice,
-        };
-      })
-      .filter((item): item is NonNullable<typeof item> => item !== null);
-  };
-
   useEffect(() => {
-    // Initial pricing status check
-    updatePricingStatus();
-
     // Load merchandise items
     const loadedMerchItems = loadMerchandiseItems();
     setMerchItems(loadedMerchItems);
@@ -287,31 +246,17 @@ const Confirmation: React.FC = () => {
       try {
         const data = JSON.parse(storedTicketData);
 
-        // Ensure seatTypes exists with proper structure
-        if (!data.seatTypes) {
-          const seatsByZone = getSelectedSeatsByZone(data.selectedSeats || []);
-          data.seatTypes = {
-            deluxe: seatsByZone.deluxe,
-            normal: seatsByZone.normal,
-          };
-        }
+        // Use the stored ticket items and total price
+        // Add merchandise total to ticket total
+        const totalPrice = (data.totalPrice || 0) + merchTotal;
 
-        // Ensure deluxe and normal arrays exist
-        if (!data.seatTypes.deluxe) {
-          data.seatTypes.deluxe = [];
-        }
-        if (!data.seatTypes.normal) {
-          data.seatTypes.normal = [];
-        }
-
-        // Recalculate price based on current pricing including merchandise
-        const recalculatedPrice = recalculatePrice(data.seatTypes, merchTotal);
-        data.totalPrice = recalculatedPrice;
-
-        setTicketData(data);
-
-        // Update session storage with recalculated price
-        sessionStorage.setItem("ticketData", JSON.stringify(data));
+        setTicketData({
+          selectedSeats: data.selectedSeats || [],
+          totalPrice: totalPrice,
+          selectedPackages: data.selectedPackages || [],
+          ticketItems: data.ticketItems || [],
+          isEarlyBird: data.isEarlyBird || false,
+        });
       } catch (error) {
         notification.error({
           message: "Invalid Booking Data",
@@ -327,15 +272,10 @@ const Confirmation: React.FC = () => {
         selectedSeats: [],
         totalPrice: merchTotal,
         selectedPackages: [],
-        seatTypes: { deluxe: [], normal: [] },
+        ticketItems: [],
+        isEarlyBird: false,
       });
     }
-
-    // Set up interval to check pricing status every minute
-    const pricingInterval = setInterval(updatePricingStatus, 60000);
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(pricingInterval);
   }, [navigate]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -431,9 +371,6 @@ const Confirmation: React.FC = () => {
     setLoading(true);
 
     try {
-      // Final pricing check before confirmation
-      updatePricingStatus();
-
       // Double-check seat availability before confirming (only if seats were selected)
       if (ticketData.selectedSeats.length > 0) {
         const isAvailable = await checkSeatsAvailability(
@@ -488,13 +425,16 @@ const Confirmation: React.FC = () => {
               .filter((item): item is NonNullable<typeof item> => item !== null)
           : [];
 
-      // Prepare booking data - only add merchandise if it exists
+      // Get seatTypes from selected seats
+      const seatTypes = getSelectedSeatsByZone(ticketData.selectedSeats);
+
+      // Prepare booking data
       const bookingData: BookingData = {
         name: formData.name.trim(),
         email: formData.email.trim().toLowerCase(),
         contactNo: formData.contactNo.trim(),
         selectedSeats: ticketData.selectedSeats,
-        seatTypes: ticketData.seatTypes,
+        seatTypes: seatTypes,
         totalPrice: ticketData.totalPrice,
         selectedPackages: ticketData.selectedPackages,
       };
@@ -519,6 +459,7 @@ const Confirmation: React.FC = () => {
         ...bookingData,
         bookingId: result?.bookingId || null,
         merchandise: merchItems,
+        ticketItems: ticketData.ticketItems,
       };
 
       // Send confirmation email using EmailJS
@@ -591,9 +532,11 @@ const Confirmation: React.FC = () => {
     );
   }
 
-  const ticketTotal =
-    (ticketData.seatTypes?.deluxe?.length || 0) * currentPricing.deluxe +
-    (ticketData.seatTypes?.normal?.length || 0) * currentPricing.normal;
+  // Calculate ticket total from ticket items
+  const ticketTotal = ticketData.ticketItems.reduce(
+    (sum, item) => sum + item.price,
+    0
+  );
   const merchTotal = calculateMerchTotal(merchItems);
 
   return (
@@ -618,34 +561,15 @@ const Confirmation: React.FC = () => {
                 </div>
 
                 <div className="summary-section">
-                  {ticketData.seatTypes?.deluxe?.length > 0 && (
-                    <div className="summary-items">
-                      <span>Deluxe Tickets</span>
+                  {ticketData.ticketItems.map((item, index) => (
+                    <div className="summary-items" key={index}>
+                      <span>{item.name}</span>
                       <span>
-                        {ticketData.seatTypes.deluxe.length} × RM{" "}
-                        {currentPricing.deluxe}
+                        {item.quantity} × RM {item.unitPrice}
                       </span>
-                      <span className="item-total">
-                        RM{" "}
-                        {ticketData.seatTypes.deluxe.length *
-                          currentPricing.deluxe}
-                      </span>
+                      <span className="item-total">RM {item.price}</span>
                     </div>
-                  )}
-                  {ticketData.seatTypes?.normal?.length > 0 && (
-                    <div className="summary-items">
-                      <span>Standard Tickets</span>
-                      <span>
-                        {ticketData.seatTypes.normal.length} × RM{" "}
-                        {currentPricing.normal}
-                      </span>
-                      <span className="item-total">
-                        RM{" "}
-                        {ticketData.seatTypes.normal.length *
-                          currentPricing.normal}
-                      </span>
-                    </div>
-                  )}
+                  ))}
                 </div>
 
                 {ticketData.selectedPackages?.length > 0 && (
@@ -687,11 +611,11 @@ const Confirmation: React.FC = () => {
             {/* Subtotals */}
             {ticketData.selectedSeats.length > 0 && merchItems.length > 0 && (
               <>
-                <div className="summary-item">
+                <div className="summary-items">
                   <span>Tickets Subtotal:</span>
                   <span>RM {ticketTotal}</span>
                 </div>
-                <div className="summary-item">
+                <div className="summary-items">
                   <span>Merchandise Subtotal:</span>
                   <span>RM {merchTotal}</span>
                 </div>
@@ -699,7 +623,7 @@ const Confirmation: React.FC = () => {
               </>
             )}
 
-            <div className="summary-item total">
+            <div className="summary-items total">
               <span>
                 <strong>Total Amount:</strong>
               </span>

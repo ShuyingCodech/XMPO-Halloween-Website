@@ -3,13 +3,19 @@ import "../styles/seatSelection.css";
 import { useNavigate } from "react-router-dom";
 import { DoubleRightOutlined } from "@ant-design/icons";
 import { notification } from "antd";
-// import { firestore } from "../firebase";
-// import { collection, getDocs } from "firebase/firestore";
 import "../styles/common.css";
 import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import { getReservedSeats } from "../services/firebaseService";
 import { checkEarlyBirdStatus } from "../utils/common";
+
+interface TicketItem {
+  type: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  price: number;
+}
 
 const SeatSelection: React.FC = () => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
@@ -51,20 +57,20 @@ const SeatSelection: React.FC = () => {
     Deluxe: {
       original: 45,
       earlyBird: 40,
-      bundleOriginal: 42, // 6 for RM252 (1 for RM42)
-      bundleEarlyBird: 42, // Same price for bundle
+      bundleOriginal: 42,
+      bundleEarlyBird: 42,
     },
     Standard1: {
       original: 25,
       earlyBird: 20,
-      bundleOriginal: 22, // 6 for RM132 (1 for RM22)
-      bundleEarlyBird: 22, // Same price for bundle
+      bundleOriginal: 22,
+      bundleEarlyBird: 22,
     },
     Standard2: {
       original: 25,
       earlyBird: 20,
-      bundleOriginal: 22, // 6 for RM132 (1 for RM22)
-      bundleEarlyBird: 22, // Same price for bundle
+      bundleOriginal: 22,
+      bundleEarlyBird: 22,
     },
   };
 
@@ -93,17 +99,106 @@ const SeatSelection: React.FC = () => {
       : seatPrices.Standard1.original;
   };
 
-  // Function to recalculate total price when early bird status changes
-  const recalculatePrice = (seats: string[], earlyBirdStatus: boolean) => {
+  // Function to calculate ticket items breakdown
+  const calculateTicketItems = (
+    seats: string[],
+    earlyBirdStatus: boolean
+  ): { items: TicketItem[]; total: number } => {
+    const items: TicketItem[] = [];
+    let total = 0;
+
     const { deluxe: deluxeSeats, normal: normalSeats } =
       getSelectedSeatsByZone(seats);
 
-    const deluxePrice = getCurrentPrice("Deluxe", deluxeSeats.length);
-    const standardPrice = getCurrentPrice("Standard", normalSeats.length);
+    // Calculate Deluxe tickets
+    if (deluxeSeats.length > 0) {
+      const deluxeBundles = Math.floor(deluxeSeats.length / 6);
 
-    return (
-      deluxeSeats.length * deluxePrice + normalSeats.length * standardPrice
-    );
+      // Bundle tickets
+      if (deluxeBundles > 0) {
+        const bundlePrice = earlyBirdStatus
+          ? seatPrices.Deluxe.bundleEarlyBird
+          : seatPrices.Deluxe.bundleOriginal;
+        const bundleQuantity = deluxeBundles * 6;
+        const bundleSubtotal = bundleQuantity * bundlePrice;
+
+        items.push({
+          type: "deluxe",
+          name: "Deluxe Ticket (Bundle)",
+          quantity: bundleQuantity,
+          unitPrice: bundlePrice,
+          price: bundleSubtotal,
+        });
+        total += bundleSubtotal;
+      }
+
+      // Remaining tickets
+      const deluxeRemainder = deluxeSeats.length % 6;
+      if (deluxeRemainder > 0) {
+        const regularPrice = earlyBirdStatus
+          ? seatPrices.Deluxe.earlyBird
+          : seatPrices.Deluxe.original;
+        const regularSubtotal = deluxeRemainder * regularPrice;
+
+        items.push({
+          type: "deluxe",
+          name: "Deluxe Ticket",
+          quantity: deluxeRemainder,
+          unitPrice: regularPrice,
+          price: regularSubtotal,
+        });
+        total += regularSubtotal;
+      }
+    }
+
+    // Calculate Standard tickets
+    if (normalSeats.length > 0) {
+      const normalBundles = Math.floor(normalSeats.length / 6);
+
+      // Bundle tickets
+      if (normalBundles > 0) {
+        const bundlePrice = earlyBirdStatus
+          ? seatPrices.Standard1.bundleEarlyBird
+          : seatPrices.Standard1.bundleOriginal;
+        const bundleQuantity = normalBundles * 6;
+        const bundleSubtotal = bundleQuantity * bundlePrice;
+
+        items.push({
+          type: "normal",
+          name: "Standard Ticket (Bundle)",
+          quantity: bundleQuantity,
+          unitPrice: bundlePrice,
+          price: bundleSubtotal,
+        });
+        total += bundleSubtotal;
+      }
+
+      // Remaining tickets
+      const normalRemainder = normalSeats.length % 6;
+      if (normalRemainder > 0) {
+        const regularPrice = earlyBirdStatus
+          ? seatPrices.Standard1.earlyBird
+          : seatPrices.Standard1.original;
+        const regularSubtotal = normalRemainder * regularPrice;
+
+        items.push({
+          type: "normal",
+          name: "Standard Ticket",
+          quantity: normalRemainder,
+          unitPrice: regularPrice,
+          price: regularSubtotal,
+        });
+        total += regularSubtotal;
+      }
+    }
+
+    return { items, total };
+  };
+
+  // Function to recalculate total price when early bird status changes
+  const recalculatePrice = (seats: string[], earlyBirdStatus: boolean) => {
+    const { total } = calculateTicketItems(seats, earlyBirdStatus);
+    return total;
   };
 
   // Set up interval to check early bird status
@@ -373,16 +468,19 @@ const SeatSelection: React.FC = () => {
       updatedSeats = [...selectedSeats, seatCode];
     }
 
-    // Calculate new total price with bundle pricing
-    const updatedPrice = recalculatePrice(updatedSeats, isEarlyBird);
+    // Calculate ticket items breakdown and total
+    const { items, total } = calculateTicketItems(updatedSeats, isEarlyBird);
 
     setSelectedSeats(updatedSeats);
-    setTotalPrice(updatedPrice);
+    setTotalPrice(total);
 
+    // Store detailed breakdown in sessionStorage
     const ticketData = {
       selectedSeats: updatedSeats,
-      totalPrice: updatedPrice,
+      totalPrice: total,
       selectedPackages,
+      ticketItems: items,
+      isEarlyBird: isEarlyBird,
     };
     sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
   };
@@ -391,7 +489,7 @@ const SeatSelection: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleContinueToPayment = () => {
+  const handleContinueToMerchandise = () => {
     if (selectedSeats.length === 0) {
       notification.error({
         message: "No Seats Selected",
@@ -419,8 +517,8 @@ const SeatSelection: React.FC = () => {
       return;
     }
 
-    // If validation passes, proceed to payment
-    navigate("/payment");
+    // If validation passes, proceed to merchandise selection
+    navigate("/merch-selection");
     setTimeout(scrollToTop, 100);
   };
 
@@ -463,7 +561,7 @@ const SeatSelection: React.FC = () => {
         }`;
         const isSelected = selectedSeats.includes(seatCode);
         const isReserved =
-          reservedSeats.includes(seatCode) || row === 1 || isLastRow; // Mark row 1 as reserved (VIP)
+          reservedSeats.includes(seatCode) || row === 1 || isLastRow;
         const isDisabled =
           (row === 12 || row === 13) && seatNum >= 1 && seatNum <= 3;
 
@@ -472,7 +570,6 @@ const SeatSelection: React.FC = () => {
             ? zones[zone as keyof typeof zones].color
             : "normal";
 
-        // Determine if seat number should be displayed
         const hideSeatNumber = shouldHideSeatNumber(row, seatNum) || isLastRow;
 
         return (
@@ -499,11 +596,11 @@ const SeatSelection: React.FC = () => {
       );
     };
 
-    generateSeatRow(1, false); // VIP row - now reserved
+    generateSeatRow(1, false);
     for (let row = 2; row <= 17; row++) {
       generateSeatRow(row, false);
     }
-    generateSeatRow(18, true); // Still reserved
+    generateSeatRow(18, true);
 
     return seatRows;
   };
@@ -518,7 +615,6 @@ const SeatSelection: React.FC = () => {
           <div className="left-section">
             <h4>Select Seats</h4>
 
-            {/* Legend with KEY header */}
             <div className="legend">
               <div className="legend-header">
                 <strong>KEY</strong>
@@ -555,7 +651,6 @@ const SeatSelection: React.FC = () => {
               </div>
             </div>
 
-            {/* Scroll hint moved here */}
             <span className="swipe-hint">
               <DoubleRightOutlined />
               &nbsp; Scroll left to view more seats
@@ -574,7 +669,6 @@ const SeatSelection: React.FC = () => {
             <div className="seats-selected">
               <h5>Seats Selected</h5>
 
-              {/* Conditional Early Bird Promo Display */}
               {isEarlyBird && (
                 <div className="early-bird-promo">
                   <h6>Early Bird Promotion</h6>
@@ -592,7 +686,6 @@ const SeatSelection: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Bundle pricing for sets of 6 */}
                   {Math.floor(deluxeSeats.length / 6) > 0 && (
                     <div className="price-display">
                       <span className="original-price">
@@ -610,7 +703,6 @@ const SeatSelection: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Regular pricing for remainder */}
                   {deluxeSeats.length % 6 > 0 && (
                     <div className="price-display">
                       {isEarlyBird && (
@@ -643,7 +735,6 @@ const SeatSelection: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Bundle pricing for sets of 6 */}
                   {Math.floor(normalSeats.length / 6) > 0 && (
                     <div className="price-display">
                       <span className="original-price">
@@ -661,7 +752,6 @@ const SeatSelection: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Regular pricing for remainder */}
                   {normalSeats.length % 6 > 0 && (
                     <div className="price-display">
                       {isEarlyBird && (
@@ -731,9 +821,9 @@ const SeatSelection: React.FC = () => {
             <button
               className="continue-payment-btn"
               disabled={selectedSeats.length === 0}
-              onClick={handleContinueToPayment}
+              onClick={handleContinueToMerchandise}
             >
-              Continue to Payment
+              Continue to Merchandise
             </button>
           </div>
         </div>

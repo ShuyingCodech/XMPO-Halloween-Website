@@ -4,7 +4,7 @@ import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import "../styles/payment.css";
 import { notification } from "antd";
-import { checkEarlyBirdStatus, computePriceForProduct } from "../utils/common";
+import { computePriceForProduct, computeCartTotal } from "../utils/common";
 import { PRODUCTS } from "../contants/Product";
 
 interface CartItem {
@@ -27,225 +27,120 @@ const Payment: React.FC = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [total, setTotal] = useState(0);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [isEarlyBird, setIsEarlyBird] = useState(true);
-
-  const seatPrices = {
-    Deluxe: { original: 45, earlyBird: 40 },
-    Standard: { original: 25, earlyBird: 20 },
-  };
-
-  // Function to get current price based on early bird status
-  const getCurrentPrice = (zoneType: string, earlyBirdStatus: boolean) => {
-    if (zoneType === "Deluxe") {
-      return earlyBirdStatus
-        ? seatPrices.Deluxe.earlyBird
-        : seatPrices.Deluxe.original;
-    }
-    return earlyBirdStatus
-      ? seatPrices.Standard.earlyBird
-      : seatPrices.Standard.original;
-  };
-
-  // Helper function to get zone type from seat code
-  const getZoneType = (seatCode: string) => {
-    const row = parseInt(seatCode.split("-")[0]);
-    if (row >= 5 && row <= 9) return "Deluxe";
-    return "Standard";
-  };
-
-  // Helper function to group seats by zone
-  const getSelectedSeatsByZone = (selectedSeats: string[]) => {
-    const deluxeSeats = selectedSeats.filter(
-      (seat) => getZoneType(seat) === "Deluxe"
-    );
-    const normalSeats = selectedSeats.filter(
-      (seat) => getZoneType(seat) === "Standard"
-    );
-
-    return {
-      deluxe: deluxeSeats,
-      normal: normalSeats,
-    };
-  };
 
   // Function to get merchandise cart items
-  const getMerchandiseItems = (): CartItem[] => {
+  const getMerchandiseItems = (): { items: CartItem[]; total: number } => {
     const merchCartStr = sessionStorage.getItem("merchCart");
-    if (!merchCartStr) return [];
+    if (!merchCartStr) return { items: [], total: 0 };
 
     try {
       const merchCart: MerchCartItem[] = JSON.parse(merchCartStr);
-      const merchItems: CartItem[] = [];
 
+      // Calculate the actual total using cross-variant pricing
+      const actualTotal = computeCartTotal(merchCart, PRODUCTS);
+
+      // Group items by product for display
+      const productGroups: Record<string, MerchCartItem[]> = {};
       merchCart.forEach((item) => {
-        const product = PRODUCTS.find((p) => p.id === item.productId);
-        if (!product) return;
-
-        const variant = product.variants?.find((v) => v.id === item.variantId);
-        const itemPrice = computePriceForProduct(product, item.quantity);
-        const unitPrice = computePriceForProduct(product, 1);
-
-        merchItems.push({
-          type: "merchandise",
-          name: product.name,
-          quantity: item.quantity,
-          unitPrice: unitPrice,
-          price: itemPrice,
-          variant: variant?.name,
-        });
+        if (!productGroups[item.productId]) {
+          productGroups[item.productId] = [];
+        }
+        productGroups[item.productId].push(item);
       });
 
-      return merchItems;
+      const merchItems: CartItem[] = [];
+
+      // For each product group, create display items
+      Object.entries(productGroups).forEach(([productId, items]) => {
+        const product = PRODUCTS.find((p) => p.id === productId);
+        if (!product) return;
+
+        
+
+        
+
+        // If product has variants, we need to show each variant separately
+        // but the pricing will be calculated together
+        if (product.variants && product.variants.length > 0) {
+          const totalQtyForProduct = items.reduce(
+            (sum, item) => sum + item.quantity,
+            0
+          );
+          const totalPriceForProduct = computePriceForProduct(
+            product,
+            totalQtyForProduct
+          );
+          const avgUnitPrice = totalPriceForProduct / totalQtyForProduct;
+
+          items.forEach((item) => {
+            const variant = product.variants?.find(
+              (v) => v.id === item.variantId
+            );
+            const itemPrice = computePriceForProduct(product, item.quantity);
+            const unitPrice = computePriceForProduct(product, 1);
+
+            merchItems.push({
+              type: "merchandise",
+              name: product.name,
+              quantity: item.quantity,
+              unitPrice: unitPrice,
+              price: itemPrice,
+              variant: variant?.name,
+            });
+          });
+        } else {
+          // No variants, calculate normally
+          items.forEach((item) => {
+            const itemPrice = computePriceForProduct(product, item.quantity);
+            const unitPrice = computePriceForProduct(product, 1);
+            merchItems.push({
+              type: "merchandise",
+              name: product.name,
+              quantity: item.quantity,
+              unitPrice: unitPrice,
+              price: itemPrice,
+            });
+          });
+        }
+      });
+
+      return { items: merchItems, total: actualTotal };
     } catch (err) {
       console.warn("Failed to parse merchCart", err);
-      return [];
+      return { items: [], total: 0 };
     }
   };
-
-  // Function to recalculate cart items and total based on current pricing
-  const recalculateCartItems = (
-    selectedSeats: string[],
-    earlyBirdStatus: boolean
-  ) => {
-    const items: CartItem[] = [];
-    let newTotal = 0;
-
-    // Add ticket items
-    if (selectedSeats && selectedSeats.length > 0) {
-      const { deluxe: deluxeSeats, normal: normalSeats } =
-        getSelectedSeatsByZone(selectedSeats);
-
-      // Add deluxe tickets if any
-      if (deluxeSeats.length > 0) {
-        const deluxePrice = getCurrentPrice("Deluxe", earlyBirdStatus);
-        const deluxeSubtotal = deluxeSeats.length * deluxePrice;
-        items.push({
-          type: "deluxe",
-          name: "Deluxe Ticket",
-          quantity: deluxeSeats.length,
-          unitPrice: deluxePrice,
-          price: deluxeSubtotal,
-        });
-        newTotal += deluxeSubtotal;
-      }
-
-      // Add normal tickets if any
-      if (normalSeats.length > 0) {
-        const standardPrice = getCurrentPrice("Standard", earlyBirdStatus);
-        const standardSubtotal = normalSeats.length * standardPrice;
-        items.push({
-          type: "normal",
-          name: "Standard Ticket",
-          quantity: normalSeats.length,
-          unitPrice: standardPrice,
-          price: standardSubtotal,
-        });
-        newTotal += standardSubtotal;
-      }
-    }
-
-    // Add merchandise items
-    const merchItems = getMerchandiseItems();
-    items.push(...merchItems);
-    merchItems.forEach((item) => {
-      newTotal += item.price;
-    });
-
-    return { items, newTotal };
-  };
-
-  // Update session storage with new pricing
-  const updateSessionStorage = (
-    selectedSeats: string[],
-    selectedPackages: string[],
-    newTotal: number
-  ) => {
-    const ticketData = {
-      selectedSeats,
-      totalPrice: newTotal,
-      selectedPackages,
-    };
-    sessionStorage.setItem("ticketData", JSON.stringify(ticketData));
-  };
-
-  // Set up interval to check early bird status
-  useEffect(() => {
-    const updateEarlyBirdStatus = () => {
-      const newEarlyBirdStatus = checkEarlyBirdStatus();
-      if (newEarlyBirdStatus !== isEarlyBird) {
-        setIsEarlyBird(newEarlyBirdStatus);
-
-        // Get current ticket data
-        const ticketData = sessionStorage.getItem("ticketData");
-        if (ticketData) {
-          const data = JSON.parse(ticketData);
-
-          // Recalculate with new pricing
-          const { items, newTotal } = recalculateCartItems(
-            data.selectedSeats || [],
-            newEarlyBirdStatus
-          );
-
-          setCartItems(items);
-          setTotal(newTotal);
-
-          // Update session storage
-          updateSessionStorage(
-            data.selectedSeats || [],
-            data.selectedPackages || [],
-            newTotal
-          );
-        }
-      }
-    };
-
-    // Check immediately
-    updateEarlyBirdStatus();
-
-    // Check every minute
-    const interval = setInterval(updateEarlyBirdStatus, 60000);
-
-    return () => clearInterval(interval);
-  }, [isEarlyBird]);
 
   useEffect(() => {
     const ticketData = sessionStorage.getItem("ticketData");
+    const items: CartItem[] = [];
+    let newTotal = 0;
+
+    // Load ticket items from sessionStorage
     if (ticketData) {
-      const data = JSON.parse(ticketData);
+      try {
+        const data = JSON.parse(ticketData);
 
-      // Check current early bird status
-      const currentEarlyBirdStatus = checkEarlyBirdStatus();
-      setIsEarlyBird(currentEarlyBirdStatus);
-
-      // Calculate cart items with current pricing
-      const { items, newTotal } = recalculateCartItems(
-        data.selectedSeats || [],
-        currentEarlyBirdStatus
-      );
-
-      setCartItems(items);
-      setTotal(newTotal);
-
-      // Update session storage if price changed
-      if (newTotal !== data.totalPrice) {
-        updateSessionStorage(
-          data.selectedSeats || [],
-          data.selectedPackages || [],
-          newTotal
-        );
-      }
-    } else {
-      // No ticket data, but might have merchandise
-      const merchItems = getMerchandiseItems();
-      if (merchItems.length > 0) {
-        setCartItems(merchItems);
-        const merchTotal = merchItems.reduce(
-          (sum, item) => sum + item.price,
-          0
-        );
-        setTotal(merchTotal);
+        if (data.ticketItems && Array.isArray(data.ticketItems)) {
+          items.push(...data.ticketItems);
+          data.ticketItems.forEach((item: CartItem) => {
+            newTotal += item.price;
+          });
+        }
+      } catch (err) {
+        console.error("Failed to parse ticketData", err);
       }
     }
+
+    // Add merchandise items with correct total
+    const { items: merchItems, total: merchTotal } = getMerchandiseItems();
+    if (merchItems.length > 0) {
+      items.push(...merchItems);
+      newTotal += merchTotal; // Use the actual calculated total
+    }
+
+    setCartItems(items);
+    setTotal(newTotal);
   }, []);
 
   const scrollToTop = () => {
@@ -277,9 +172,9 @@ const Payment: React.FC = () => {
       const product = PRODUCTS.find((p) => p.name === item.name);
       return product?.mainImage || "./images/placeholder.png";
     }
-    return item.type === "normal"
-      ? "./images/normal-t.avif"
-      : "./images/deluxe-t.avif";
+    return item.type === "deluxe"
+      ? "./images/deluxe-t.avif"
+      : "./images/normal-t.avif";
   };
 
   return (
