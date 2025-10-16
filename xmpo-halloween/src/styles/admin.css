@@ -465,7 +465,7 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
@@ -491,6 +491,11 @@
 .stats-card.normal-sales {
   border-left: 4px solid #faad14;
   background: linear-gradient(135deg, #2e2a1a 0%, #1f1f1f 100%);
+}
+
+.stats-card.merchandise-sales {
+  border-left: 4px solid #764ba2;
+  background: linear-gradient(135deg, #2a1a2e 0%, #1f1f1f 100%);
 }
 
 .stats-card.total-sales {
@@ -542,6 +547,10 @@
   border-radius: 8px 8px 0 0;
 }
 
+.table-header.merch {
+  grid-template-columns: 2fr 80px 100px;
+}
+
 .header-item {
   text-align: left;
 }
@@ -565,6 +574,10 @@
   background-color: #2a2a2a;
   align-items: center;
   transition: background-color 0.2s ease;
+}
+
+.table-row.merch {
+  grid-template-columns: 2fr 80px 100px;
 }
 
 .table-row:last-child {

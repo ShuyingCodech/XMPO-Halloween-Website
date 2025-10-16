@@ -33,6 +33,8 @@ export interface BookingData {
     normal: string[];
   };
   totalPrice: number;
+  totalMerchPrice: number;
+  totalTicketMerchPrice: number;
   selectedPackages: string[];
   merchandise?: Array<{
     productId: string;
@@ -397,9 +399,7 @@ export const checkMerchandiseAvailability = async (
           : product?.name || item.productId;
 
         const remaining = Math.max(0, inventoryItem.maxQuantity - currentSold);
-        unavailableItems.push(
-          `${itemName} `
-        );
+        unavailableItems.push(`${itemName} `);
       }
     }
 

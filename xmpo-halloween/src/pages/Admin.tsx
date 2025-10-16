@@ -24,6 +24,8 @@ interface BookingDetails {
     normal: string[];
   };
   totalPrice: number;
+  totalMerchPrice: number;
+  totalTicketMerchPrice: number;
   selectedPackages: string[];
   receiptUrl: string;
   createdAt: any;
@@ -37,6 +39,15 @@ interface BookingDetails {
     unitPrice: number;
     totalPrice: number;
   }>;
+}
+
+interface MerchandiseStats {
+  [productName: string]: {
+    [variantName: string]: {
+      quantity: number;
+      revenue: number;
+    };
+  };
 }
 
 interface SalesStats {
@@ -55,6 +66,8 @@ interface SalesStats {
     standardCount: number;
     revenue: number;
   };
+  merchandise: MerchandiseStats;
+  totalMerchandiseRevenue: number;
 }
 
 const Admin: React.FC = () => {
@@ -64,11 +77,14 @@ const Admin: React.FC = () => {
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("createdAt");
+  const [filterBy, setFilterBy] = useState("all");
   const [loading, setLoading] = useState(true);
   const [salesStats, setSalesStats] = useState<SalesStats>({
     earlyBird: { deluxeCount: 0, standardCount: 0, revenue: 0 },
     normal: { deluxeCount: 0, standardCount: 0, revenue: 0 },
     total: { deluxeCount: 0, standardCount: 0, revenue: 0 },
+    merchandise: {},
+    totalMerchandiseRevenue: 0,
   });
 
   // Pagination states
@@ -91,6 +107,8 @@ const Admin: React.FC = () => {
       earlyBird: { deluxeCount: 0, standardCount: 0, revenue: 0 },
       normal: { deluxeCount: 0, standardCount: 0, revenue: 0 },
       total: { deluxeCount: 0, standardCount: 0, revenue: 0 },
+      merchandise: {},
+      totalMerchandiseRevenue: 0,
     };
 
     bookingsList.forEach((booking) => {
@@ -112,6 +130,35 @@ const Admin: React.FC = () => {
       stats.total.deluxeCount += deluxeCount;
       stats.total.standardCount += standardCount;
       stats.total.revenue += booking.totalPrice;
+      if (booking.totalMerchPrice) {
+        stats.total.revenue += booking.totalMerchPrice;
+      }
+
+      // Calculate merchandise stats
+      if (booking.merchandise && booking.merchandise.length > 0) {
+        stats.totalMerchandiseRevenue += booking.totalMerchPrice;
+        booking.merchandise.forEach((item) => {
+          const productName = item.productName;
+          const variantName = item.variantName || "No Variant";
+
+          // Initialize product if not exists
+          if (!stats.merchandise[productName]) {
+            stats.merchandise[productName] = {};
+          }
+
+          // Initialize variant if not exists
+          if (!stats.merchandise[productName][variantName]) {
+            stats.merchandise[productName][variantName] = {
+              quantity: 0,
+              revenue: 0,
+            };
+          }
+
+          stats.merchandise[productName][variantName].quantity += item.quantity;
+          stats.merchandise[productName][variantName].revenue +=
+            item.totalPrice;
+        });
+      }
     });
 
     return stats;
@@ -154,7 +201,24 @@ const Admin: React.FC = () => {
         (booking.studentId &&
           booking.studentId.toLowerCase().includes(searchTerm.toLowerCase()));
 
-      return matchesSearch;
+      // Apply filter by type
+      const hasSeats =
+        booking.selectedSeats && booking.selectedSeats.length > 0;
+      const hasPackages =
+        (booking.selectedPackages && booking.selectedPackages.length > 0) ||
+        (booking.merchandise && booking.merchandise.length > 0);
+
+      let matchesFilter = true;
+      if (filterBy === "seats") {
+        matchesFilter = hasSeats && !hasPackages;
+      } else if (filterBy === "packages") {
+        matchesFilter = !hasSeats && !!hasPackages;
+      } else if (filterBy === "both") {
+        matchesFilter = !!hasSeats && !!hasPackages;
+      }
+      // 'all' shows everything
+
+      return matchesSearch && matchesFilter;
     });
 
     filtered.sort((a, b) => {
@@ -176,9 +240,8 @@ const Admin: React.FC = () => {
 
     setFilteredBookings(filtered);
     setSalesStats(calculateSalesStats(filtered));
-    // Reset to first page when filtering/sorting changes
     setCurrentPage(1);
-  }, [bookings, searchTerm, sortBy]);
+  }, [bookings, searchTerm, sortBy, filterBy]);
 
   const handleDeleteBooking = async (bookingId: string) => {
     if (window.confirm("Are you sure you want to delete this booking?")) {
@@ -303,6 +366,57 @@ const Admin: React.FC = () => {
       </div>
     );
   }
+
+  const MerchandiseStatsCard = () => {
+    if (Object.keys(salesStats.merchandise).length === 0) {
+      return null;
+    }
+
+    return (
+      <div className="stats-card merchandise-sales">
+        <div className="stats-header">
+          <h4>Merchandise Sales</h4>
+          <span className="period-label">All Time</span>
+        </div>
+
+        <div className="sales-table">
+          <div className="table-header merch">
+            <div className="header-item">Item</div>
+            <div className="header-qty">Qty</div>
+            <div className="header-subtotal">Subtotal</div>
+          </div>
+
+          {Object.entries(salesStats.merchandise).map(
+            ([productName, variants]) =>
+              Object.entries(variants).map(([variantName, data], idx) => (
+                <div
+                  className="table-row merch"
+                  key={`${productName}-${variantName}`}
+                >
+                  <div className="item-info">
+                    <span className="item-name">
+                      {productName}
+                      {variantName !== "No Variant" && ` (${variantName})`}
+                    </span>
+                  </div>
+                  <div className="item-qty">{data.quantity}</div>
+                  <div className="item-subtotal">
+                    {formatCurrency(data.revenue)}
+                  </div>
+                </div>
+              ))
+          )}
+
+          <div className="table-total">
+            <div className="total-label">Merchandise Revenue:</div>
+            <div className="total-amount">
+              {formatCurrency(salesStats.totalMerchandiseRevenue)}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="admin-container">
@@ -439,6 +553,8 @@ const Admin: React.FC = () => {
             </div>
           </div>
 
+          <MerchandiseStatsCard />
+
           {/* Total Sales Summary */}
           <div className="stats-card total-sales">
             <div className="stats-header">
@@ -468,7 +584,7 @@ const Admin: React.FC = () => {
               </div>
 
               <div className="grand-total">
-                <div className="total-label">Total Revenue:</div>
+                <div className="total-label">Total Revenue (Incl. Merch):</div>
                 <div className="total-amount">
                   {formatCurrency(salesStats.total.revenue)}
                 </div>
@@ -487,6 +603,19 @@ const Admin: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
+        </div>
+
+        <div className="sort-container">
+          <select
+            value={filterBy}
+            onChange={(e) => setFilterBy(e.target.value)}
+            className="sort-select"
+          >
+            <option value="all">All Bookings</option>
+            <option value="seats">Seats Only</option>
+            <option value="packages">Merch Only</option>
+            <option value="both">Seats + Merch</option>
+          </select>
         </div>
 
         <div className="sort-container">

@@ -435,7 +435,9 @@ const Confirmation: React.FC = () => {
         contactNo: formData.contactNo.trim(),
         selectedSeats: ticketData.selectedSeats,
         seatTypes: seatTypes,
-        totalPrice: ticketData.totalPrice,
+        totalPrice: ticketTotal,
+        totalTicketMerchPrice: ticketData.totalPrice,
+        totalMerchPrice: merchTotal,
         selectedPackages: ticketData.selectedPackages,
       };
 
