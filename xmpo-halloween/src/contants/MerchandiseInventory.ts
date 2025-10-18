@@ -9,19 +9,19 @@ export const MERCHANDISE_INVENTORY: MerchandiseInventory[] = [
   {
     productId: "keychain",
     variantId: null,
-    maxQuantity: 220,
+    maxQuantity: 140,
   },
   // Drawstring Bag - Design 1
   {
     productId: "drawstring",
     variantId: "expressions",
-    maxQuantity: 70,
+    maxQuantity: 50,
   },
   // Drawstring Bag - Design 2
   {
     productId: "drawstring",
     variantId: "mosaic",
-    maxQuantity: 70,
+    maxQuantity: 50,
   },
   // T-shirt - XS
   {

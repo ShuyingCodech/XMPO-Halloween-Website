@@ -754,7 +754,7 @@ const Admin: React.FC = () => {
                         </div>
                       </td>
                       <td className="amount">
-                        {formatCurrency(booking.totalPrice)}
+                        {formatCurrency(booking.totalTicketMerchPrice ?? booking.totalPrice)}
                       </td>
                       <td>
                         {booking.receiptUrl ? (

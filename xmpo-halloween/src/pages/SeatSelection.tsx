@@ -57,19 +57,19 @@ const SeatSelection: React.FC = () => {
     Deluxe: {
       original: 45,
       earlyBird: 40,
-      bundleOriginal: 42,
+      bundleOriginal: 45,
       bundleEarlyBird: 42,
     },
     Standard1: {
       original: 25,
       earlyBird: 20,
-      bundleOriginal: 22,
+      bundleOriginal: 25,
       bundleEarlyBird: 22,
     },
     Standard2: {
       original: 25,
       earlyBird: 20,
-      bundleOriginal: 22,
+      bundleOriginal: 25,
       bundleEarlyBird: 22,
     },
   };
@@ -694,8 +694,8 @@ const SeatSelection: React.FC = () => {
                       <span className="current-price">
                         RM
                         {isEarlyBird
-                          ? seatPrices.Deluxe.bundleEarlyBird
-                          : seatPrices.Deluxe.bundleOriginal}
+                          ? seatPrices.Deluxe.earlyBird
+                          : seatPrices.Deluxe.bundleEarlyBird}
                       </span>
                       <span className="quantity">
                         x {Math.floor(deluxeSeats.length / 6) * 6}
@@ -743,8 +743,8 @@ const SeatSelection: React.FC = () => {
                       <span className="current-price">
                         RM
                         {isEarlyBird
-                          ? seatPrices.Standard1.bundleEarlyBird
-                          : seatPrices.Standard1.bundleOriginal}
+                          ? seatPrices.Standard1.earlyBird
+                          : seatPrices.Standard1.bundleEarlyBird}
                       </span>
                       <span className="quantity">
                         x {Math.floor(normalSeats.length / 6) * 6}
